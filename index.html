@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Krexsims Portfolio</title>
+<style>
+
+  /* ============================================================
+     COLOR THEME — same palette as before, change here to re-skin
+     ============================================================ */
+  :root{
+    --bg:#0b0d12;          /* page background base color */
+    --panel:#12151c;       /* card / panel background */
+    --panel-2:#161a23;     /* slightly lighter panel (headers, tags) */
+    --line:#242938;        /* border color used everywhere */
+    --text:#e7e9ee;        /* main text color */
+    --muted:#8a90a2;       /* secondary / label text color */
+    --accent:#3e3bff;      /* blue end of the accent gradient */
+    --accent-soft:#a855f733;
+    --accent2:#a855f7;     /* purple midpoint of the accent gradient */
+    --key:#ff9d5c;         /* orange end of the accent gradient */
+    --str:#7ee787;         /* code "string" color */
+    --prop:#79c0ff;        /* code "property" color */
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  html{
+    scroll-behavior:smooth;
+    overflow-y:scroll;
+    scrollbar-gutter:stable;
+    scrollbar-width:thin;
+    scrollbar-color:var(--line) transparent;
+  }
+  body{
+    background:radial-gradient(1200px 700px at 15% -10%, #2a0f16 0%, transparent 60%),
+               radial-gradient(1000px 600px at 100% 0%, #1a0d10 0%, transparent 55%),
+               var(--bg);
+    color:var(--text);
+    font-family:'Segoe UI', ui-sans-serif, system-ui, -apple-system, sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  section{ scroll-margin-top:110px; }
+  img{ max-width:100%; }
+
+  /* ============================================================
+     DARK VEIL — animated background, pinned behind all content
+     ============================================================ */
+  #darkveilBg{
+    position:fixed;
+    inset:0;
+    width:100vw;
+    height:100vh;
+    z-index:-1;
+    pointer-events:none;
+  }
+
+  /* ============================================================
+     LOADING SCREEN — full-page splash shown while the page boots
+     ============================================================ */
+  .loading-screen{
+    position:fixed; inset:0; z-index:500;
+    background:radial-gradient(900px 500px at 50% 30%, rgba(62,59,255,.35) 0%, transparent 60%), var(--bg);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+    transition:opacity .6s ease, visibility .6s ease;
+  }
+  .loading-screen.hide{ opacity:0; visibility:hidden; pointer-events:none; }
+  .load-rings{ position:relative; width:110px; height:110px; display:flex; align-items:center; justify-content:center; margin-bottom:6px; }
+  .load-ring{ position:absolute; border:1px solid var(--accent-soft); border-radius:50%; }
+  .load-ring.r1{ width:100%; height:100%; animation:ringPulse 2.2s ease-in-out infinite; }
+  .load-ring.r2{ width:68%; height:68%; animation:ringPulse 2.2s ease-in-out infinite .3s; }
+  @keyframes ringPulse{ 0%,100%{ transform:scale(.9); opacity:.45; } 50%{ transform:scale(1.08); opacity:1; } }
+  .load-logo{
+    font-family:'Fira Code', Consolas, monospace; font-size:30px; font-weight:700;
+    color:var(--accent); text-shadow:0 0 18px var(--accent-soft), 0 0 34px var(--accent-soft);
+  }
+  .load-name{ font-size:19px; font-weight:700; letter-spacing:.5px; }
+  .load-name .dot{ color:var(--accent); }
+  .load-tags{ font-size:10px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; }
+  .load-bar-track{ width:220px; height:3px; border-radius:2px; background:var(--panel-2); overflow:hidden; margin-top:10px; }
+  .load-bar-fill{ height:100%; width:0%; background:linear-gradient(90deg, var(--accent), var(--accent2), var(--key)); border-radius:2px; transition:width .18s ease; }
+  .load-status{ display:flex; justify-content:space-between; width:220px; font-size:9.5px; letter-spacing:1px; color:var(--muted); text-transform:uppercase; }
+  .load-status b{ color:var(--accent); font-weight:700; }
+
+  /* ============================================================
+     TECH LOGO LOOP — decorative divider between Home and About,
+     an infinite horizontally-scrolling strip of white tech-stack
+     logos (vanilla-JS/CSS port of the React Bits LogoLoop component).
+     Replaces the old binary/matrix-rain divider.
+     ============================================================ */
+  .logo-loop{
+    position:relative; width:100%;
+    padding:26px 0;
+    overflow:hidden;
+    -webkit-mask-image:linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+    mask-image:linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  }
+  .logo-loop-track{
+    display:flex;
+    align-items:center;
+    width:max-content;
+    gap:64px;
+    animation-name:logo-loop-scroll;
+    animation-timing-function:linear;
+    animation-iteration-count:infinite;
+    /* --loop-shift is set from JS once the real repeat width is
+       measured — this 50% is just a harmless fallback before that
+       runs (e.g. if JS fails to load). */
+    animation-duration:26s;
+  }
+  .logo-loop:hover .logo-loop-track{ animation-play-state:paused; }
+  .logo-loop-track svg{
+    height:34px; width:34px;
+    display:block;
+    color:#fff;
+    opacity:.75;
+    filter:drop-shadow(0 0 10px rgba(255,255,255,.08));
+    transition:opacity .2s ease, transform .2s ease;
+    flex:0 0 auto;
+  }
+  .logo-loop-track svg:hover{ opacity:1; transform:scale(1.12); }
+  @keyframes logo-loop-scroll{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(var(--loop-shift, -50%)); }
+  }
+  @media (prefers-reduced-motion:reduce){
+    .logo-loop-track{ animation:none; }
+  }
+
+  /* ============================================================
+     TOP FLOATING PILL NAVIGATION
+     ============================================================ */
+  .topnav{
+    position:fixed;
+    top:18px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:60;
+    display:flex;
+    align-items:center;
+    gap:18px;
+    background:rgba(18,21,28,.75);
+    backdrop-filter:blur(14px);
+    border:1px solid var(--line);
+    padding:8px 8px 8px 20px;
+    border-radius:999px;
+    box-shadow:0 20px 50px rgba(0,0,0,.5);
+    max-width:calc(100vw - 24px);
+  }
+  .topnav .brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-weight:700;
+    font-size:14px;
+    letter-spacing:.3px;
+    white-space:nowrap;
+    text-decoration:none;
+    color:var(--text);
+  }
+  .brand-dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 10px var(--accent);
+  }
+  .pillnav{
+    position:relative;
+    display:flex;
+    gap:2px;
+    background:var(--panel-2);
+    border-radius:999px;
+    padding:4px;
+  }
+  .pillnav a{
+    position:relative;
+    z-index:2;
+    padding:8px 15px;
+    font-size:11.5px;
+    letter-spacing:1px;
+    font-weight:700;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-decoration:none;
+    border-radius:999px;
+    transition:color .25s ease;
+    white-space:nowrap;
+  }
+  .pillnav a.active{ color:#0b0d12; }
+  .pill-indicator{
+    position:absolute;
+    top:4px; left:4px;
+    height:calc(100% - 8px);
+    border-radius:999px;
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    z-index:1;
+    box-shadow:0 4px 18px var(--accent-soft);
+    transition:transform .4s cubic-bezier(.65,0,.35,1), width .4s cubic-bezier(.65,0,.35,1);
+  }
+  .topnav .cta-btn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    color:#0b0d12;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.4px;
+    padding:10px 18px;
+    border-radius:999px;
+    text-decoration:none;
+    white-space:nowrap;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .topnav .cta-btn:hover{ transform:translateY(-1px); box-shadow:0 10px 24px var(--accent-soft); }
+  .nav-toggle{ display:none; }
+
+  @media (max-width:900px){
+    .pillnav a{ padding:7px 11px; font-size:10.5px; letter-spacing:.5px; }
+    .topnav{ gap:10px; padding:7px 7px 7px 16px; }
+    .topnav .cta-btn span{ display:none; }
+    .topnav .cta-btn{ padding:10px 13px; }
+  }
+  @media (max-width:700px){
+    .pillnav{ display:none; }
+    .topnav{ width:calc(100vw - 24px); justify-content:space-between; }
+  }
+
+  /* ============================================================
+     SHARED SECTION / LAYOUT HELPERS
+     ============================================================ */
+  .wrap{
+    max-width:1180px;
+    margin:0 auto;
+    padding:0 40px;
+  }
+  .eyebrow{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:3px;
+    color:var(--accent);
+    text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:26px;
+    height:1px;
+    background:var(--accent);
+  }
+  .section-title{
+    font-size:clamp(28px, 4vw, 42px);
+    font-weight:800;
+    letter-spacing:.2px;
+    margin:0 0 46px;
+    line-height:1.2;
+  }
+  .section-title em{
+    font-style:italic;
+    font-weight:600;
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  section.page-block{ padding:110px 0; }
+  @media (max-width:700px){
+    .wrap{ padding:0 22px; }
+    section.page-block{ padding:80px 0; }
+  }
+
+  /* ============================================================
+     HERO / HOME
+     ============================================================ */
+  .hero{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    padding:150px 0 70px;
+  }
+  .hero-grid{
+    display:grid;
+    grid-template-columns:660px 380px;
+    gap:60px;
+    align-items:start;
+  }
+  .hero-text{ min-width:0; }
+  .hero-text h1{ overflow-wrap:break-word; }
+  .hero-eyebrow{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--muted);
+    text-transform:uppercase;
+    margin-bottom:22px;
+  }
+  .hero-eyebrow .dot{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--str);
+    box-shadow:0 0 8px var(--str);
+  }
+  .hero h1{
+    font-size:clamp(34px, 5vw, 54px);
+    line-height:1.05;
+    font-weight:800;
+    margin:0 0 22px;
+    letter-spacing:-.5px;
+  }
+  .hero h1 .lead{ color:var(--muted); font-weight:600; font-size:.5em; display:block; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+  .hero h1 .rotate{
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+  }
+  .hero h1 .cursor{
+    display:inline-block;
+    width:3px;
+    margin-left:3px;
+    background:var(--accent);
+    animation:blink 1s step-end infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+  .hero p.lead-p{
+    font-size:15.5px;
+    line-height:1.8;
+    color:#cfd3dd;
+    max-width:520px;
+    margin:0 0 32px;
+  }
+  .hero p.lead-p b{ color:var(--text); }
+  .hero-actions{ display:flex; gap:14px; flex-wrap:wrap; margin-bottom:36px; }
+  .btn{
+    font-family:inherit;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.4px;
+    padding:14px 26px;
+    border-radius:999px;
+    text-decoration:none;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+    border:1px solid transparent;
+  }
+  .btn-primary{
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    color:#0b0d12;
+    box-shadow:0 14px 30px var(--accent-soft);
+  }
+  .btn-primary:hover{ transform:translateY(-2px); }
+  .btn-ghost{
+    background:var(--panel);
+    border-color:var(--line);
+    color:var(--text);
+  }
+  .btn-ghost:hover{ border-color:var(--accent); transform:translateY(-2px); }
+
+  .hero-socials{ display:flex; align-items:center; gap:18px; }
+  .hero-socials .follow-text{
+    font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted);
+  }
+  .hero-socials a{ color:var(--muted); display:flex; transition:color .2s, transform .2s; }
+  .hero-socials a:hover{ color:var(--accent); transform:translateY(-3px); }
+  .hero-socials svg{ width:19px; height:19px; }
+
+  /* ---- GitHub-style contributions calendar, below the Follow Me row ---- */
+  .gh-contrib{ margin-top:26px; max-width:100%; }
+  .gh-contrib-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    font-size:11px; color:var(--muted); margin-bottom:8px; max-width:540px;
+  }
+  .gh-contrib-link{ color:var(--muted); text-decoration:none; white-space:nowrap; }
+  .gh-contrib-link:hover{ color:var(--accent); }
+  /* a full 53-week year, scaled down so it fits the hero column; it still
+     scrolls sideways on very narrow screens like GitHub's own graph */
+  .gh-contrib-scroll{ overflow-x:auto; overflow-y:hidden; padding-bottom:4px; max-width:100%; }
+  .gh-contrib-cal{
+    width:max-content; border:1px solid var(--line); border-radius:8px;
+    padding:9px 11px; background:rgba(255,255,255,.015);
+  }
+  .gh-contrib-months{
+    display:grid; grid-auto-flow:column; grid-auto-columns:7px;
+    gap:2px; margin-left:24px; margin-bottom:4px; height:10px;
+    font-size:8px; color:var(--muted); white-space:nowrap;
+  }
+  .gh-contrib-months span{ overflow:visible; }
+  .gh-contrib-body{ display:flex; gap:4px; }
+  .gh-contrib-days{
+    display:grid; grid-template-rows:repeat(7, 7px); gap:2px;
+    font-size:8px; color:var(--muted); width:20px;
+  }
+  .gh-contrib-days span{ display:flex; align-items:center; }
+  .gh-contrib-grid{
+    display:grid; grid-auto-flow:column; grid-template-rows:repeat(7, 7px);
+    gap:2px; width:max-content;
+  }
+  .gh-cell{
+    width:7px; height:7px; border-radius:1.5px; display:block;
+    background:var(--line); outline:1px solid rgba(255,255,255,.05);
+    outline-offset:-1px; transition:background .45s ease;
+  }
+  .gh-contrib-foot{
+    display:flex; align-items:center; justify-content:flex-end;
+    gap:14px; margin-top:8px; font-size:9px; color:var(--muted);
+  }
+  .gh-contrib-legend{ display:flex; align-items:center; gap:3px; }
+  .gh-contrib-legend .gh-cell{ width:7px; height:7px; }
+
+  /* ---- hero right column: skill stack + idle game cards ---- */
+  .side-stack{ display:flex; flex-direction:column; gap:20px; }
+  .skill-panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:22px 22px 20px;
+    box-shadow:0 24px 60px rgba(0,0,0,.4);
+  }
+  .skill-panel-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .skill-panel-head .label{
+    display:flex; align-items:center; gap:8px;
+    font-size:11px; font-weight:700; letter-spacing:2px; color:var(--muted); text-transform:uppercase;
+  }
+  .skill-panel-head .label .dot{ width:6px; height:6px; border-radius:50%; background:var(--str); }
+  .skill-panel-head .hint{
+    font-size:9.5px; letter-spacing:1px; text-transform:uppercase; color:var(--muted);
+    background:var(--panel-2); border:1px solid var(--line); padding:4px 10px; border-radius:999px;
+  }
+  .skill-tiles{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .skill-tile{
+    position:relative;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 14px 12px;
+    overflow:hidden;
+    cursor:default;
+    transition:border-color .25s ease, transform .25s ease;
+  }
+  .skill-tile:last-child:nth-child(odd){ grid-column:1 / -1; }
+  .skill-tile:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .skill-tile .icon{
+    width:30px; height:30px; border-radius:8px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--accent-soft);
+    margin-bottom:10px;
+  }
+  .skill-tile .icon svg{ width:16px; height:16px; color:var(--accent); }
+  .skill-tile h4{ font-size:13px; margin:0 0 6px; letter-spacing:.2px; }
+  .skill-tile .bar{ height:4px; border-radius:3px; background:var(--line); overflow:hidden; margin-bottom:8px; }
+  .skill-tile .bar span{ display:block; height:100%; border-radius:3px; background:linear-gradient(90deg, var(--accent), var(--accent2), var(--key)); }
+  .skill-tile .blurb{
+    font-size:11px; line-height:1.5; color:var(--muted);
+    max-height:0; opacity:0; transition:max-height .3s ease, opacity .25s ease;
+  }
+  .skill-tile:hover .blurb{ max-height:60px; opacity:1; }
+  .skill-tile .status{ font-size:9.5px; letter-spacing:1px; text-transform:uppercase; color:var(--str); }
+
+  /* ---- ambient idle game cards, reused as-is from the original sidebar ---- */
+  .snake-card{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+    box-shadow:0 16px 40px rgba(0,0,0,.35);
+  }
+  .snake-card .card-head{ padding:10px 14px; }
+  .snake-card .filename{ font-size:11px; }
+  .snake-card canvas{ display:block; width:100%; height:auto; background:#0d0f15; }
+  .games-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+  @media (max-width:980px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .hero{ padding-top:130px; text-align:left; }
+    .side-stack{ max-width:520px; }
+  }
+  @media (max-width:560px){
+    .games-row{ grid-template-columns:1fr; }
+    .hero-actions{ flex-direction:column; align-items:stretch; }
+  }
+
+  /* ---- hero right column carousel: Profile Card <-> Skill Stack/Games ---- */
+  .hero-panel-carousel{ position:relative; overflow:hidden; }
+  .hero-panel-track{
+    display:flex;
+    width:200%;
+    transition:transform .5s cubic-bezier(.65,0,.35,1);
+  }
+  .hero-panel-page{
+    width:50%;
+    flex:0 0 50%;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    gap:20px;
+    padding:0 6px;
+    box-sizing:border-box;
+  }
+  .panel-nav-btn{
+    position:absolute;
+    top:50%;
+    transform:translateY(-50%);
+    width:38px; height:38px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--text);
+    font-size:18px;
+    line-height:1;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    z-index:5;
+    transition:border-color .2s ease, opacity .2s ease;
+  }
+  .panel-nav-btn:hover:not(:disabled){ border-color:var(--accent); }
+  .panel-nav-btn.prev{ left:10px; }
+  .panel-nav-btn.next{ right:10px; }
+  .panel-nav-btn:disabled{ opacity:.25; cursor:default; }
+
+  /* ============================================================
+     ABOUT
+     ============================================================ */
+  .about-grid{
+    display:grid;
+    grid-template-columns:1fr 400px;
+    gap:60px;
+    align-items:start;
+  }
+  .about-grid h2{
+    font-size:clamp(30px, 4.5vw, 46px);
+    line-height:1.15;
+    margin:0 0 22px;
+    font-weight:800;
+  }
+  .about-grid h2 .hi{ display:block; font-size:.42em; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; }
+  .about-text p{ font-size:14.5px; line-height:1.85; color:#cfd3dd; margin:0 0 18px; }
+  .about-text p b{ color:var(--text); }
+  .about-actions{ display:flex; gap:14px; flex-wrap:wrap; margin:28px 0 40px; }
+  .stat-row{ display:flex; gap:44px; flex-wrap:wrap; }
+  .stat-row .stat b{ display:block; font-size:30px; font-weight:800; }
+  .stat-row .stat span{ font-size:10.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); }
+
+  /* ---- draggable ID card, matching the video: plain photo card on a
+     strap, no text printed on the card, drag + spring-bounce + a little
+     3D flip on fast moves. No modal — this is the whole interaction. ---- */
+  .lanyard-wrap{
+  display:flex; flex-direction:column; align-items:center;
+  position:relative; perspective:1200px;
+  transform:translateY(-160px);
+  min-width:0;
+}
+  .lanyard{
+    position:relative; width:100%;
+    display:flex; flex-direction:column; align-items:center;
+    padding-top:4px;
+    touch-action:none;   /* let JS handle drag gestures instead of the browser scrolling/zooming */
+  }
+  .clip-icon{ width:15px; height:15px; color:var(--muted); transform:rotate(20deg); margin-bottom:1px; }
+  .clip-icon svg{ width:100%; height:100%; }
+  .strap{
+    width:3px; height:56px; margin:0 auto;
+    background:linear-gradient(180deg,#3a3f4d,#14151b);
+    border-radius:2px;
+    transform-origin:top center;
+    transition:transform .12s ease-out;
+  }
+  .swing{
+    transform-origin:top center;
+    animation:swing 4.5s ease-in-out infinite;
+    transform-style:preserve-3d;
+  }
+  .swing.dragging{ animation:none; }
+  @keyframes swing{ 0%{ transform:rotate(4deg); } 50%{ transform:rotate(-4deg); } 100%{ transform:rotate(4deg); } }
+
+  .id-card{
+    position:relative;
+    width:190px; height:250px;
+    margin-top:-2px;
+    cursor:grab;
+    transform-style:preserve-3d;
+    transition:transform .08s ease-out;
+  }
+  .swing.dragging .id-card{ cursor:grabbing; transition:none; }
+  .id-card-face{
+    position:absolute; inset:0;
+    border-radius:14px;
+    background:#eeefec;
+    box-shadow:0 22px 50px rgba(0,0,0,.55);
+    backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    padding:9px;
+    overflow:hidden;
+  }
+  .id-card-front{ transform:rotateY(0deg); }
+  .id-card-front img{ width:100%; height:100%; object-fit:cover; border-radius:7px; display:block; }
+  .id-card-fallback{
+    display:none; width:100%; height:100%; align-items:center; justify-content:center;
+    background:#dcdcd9; border-radius:7px; color:#9a9a97;
+  }
+  .id-card-fallback svg{ width:46%; height:46%; }
+  .id-card-back{ transform:rotateY(180deg); background:#e6e6e3; }
+  .badge-hint{ margin-top:14px; font-size:9px; letter-spacing:1.5px; color:var(--muted); text-transform:uppercase; opacity:.7; }
+
+  /* ---- zoom modal, used only by the About photo gallery now ---- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(4,5,8,.82); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; z-index:200;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  .modal-overlay.open{ opacity:1; pointer-events:auto; }
+  .modal-close{
+    position:absolute; top:24px; right:28px; width:40px; height:40px; border-radius:50%;
+    border:1px solid var(--line); background:var(--panel); color:var(--text); font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:background .2s, transform .2s;
+  }
+  .modal-close:hover{ background:var(--accent); transform:rotate(90deg); }
+  .photo-modal-card{
+    max-width:90vw; max-height:85vh; background:var(--panel); border:2px solid var(--line); border-radius:16px;
+    overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 60px var(--accent-soft);
+    transform:scale(.85); transition:transform .25s ease; display:flex; flex-direction:column;
+  }
+  .modal-overlay.open .photo-modal-card{ transform:scale(1); }
+  .photo-modal-card img{ display:block; max-width:90vw; max-height:75vh; object-fit:contain; }
+
+  /* ---- about photo gallery, reused ---- */
+  .about-gallery{ margin-top:60px; display:grid; grid-template-columns:repeat(3, 1fr); gap:20px; }
+  .about-photo{
+    position:relative; aspect-ratio:4/3; border-radius:12px; overflow:hidden; border:1px solid var(--line);
+    background:linear-gradient(135deg,#161a23,#1d2230); box-shadow:0 16px 32px rgba(0,0,0,.3);
+    transition:transform .2s ease, border-color .2s ease; cursor:pointer;
+  }
+  .about-photo:hover{ transform:translateY(-4px); border-color:var(--accent); }
+  .about-photo:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .about-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .about-photo-fallback{
+    position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px; color:var(--muted); font-size:11px; letter-spacing:.5px; text-align:center; padding:10px;
+  }
+  .about-photo-fallback svg{ width:28px; height:28px; color:var(--accent); }
+  .about-photo.no-img img{ display:none; }
+  .about-photo.no-img .about-photo-fallback{ display:flex; }
+
+  /* ---- about photo gallery: React Bits DriftWall (20-photo drift wall) ---- */
+  .about-gallery-driftwall{
+    margin-top:20px;
+    width:100%;
+    height:600px;
+    border-radius:16px;
+    overflow:hidden;
+  }
+  @media (max-width:600px){ .about-gallery-driftwall{ height:420px; } }
+
+  /* ---- gallery click-to-zoom lightbox ---- */
+  .about-gallery-driftwall .drift-wall__tile{ cursor:pointer !important; }
+  .gallery-lightbox{
+    position:fixed; inset:0; z-index:1000;
+    background:rgba(5,6,10,.92);
+    display:flex;
+    align-items:center; justify-content:center;
+    padding:40px;
+    cursor:zoom-out;
+    opacity:0;
+    visibility:hidden;
+    transition:opacity .3s ease, visibility 0s linear .3s;
+  }
+  .gallery-lightbox.show{
+    opacity:1;
+    visibility:visible;
+    transition:opacity .3s ease, visibility 0s linear 0s;
+  }
+  .gallery-lightbox img{
+    max-width:90vw; max-height:90vh;
+    border-radius:12px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);
+    cursor:default;
+    transform:scale(.92);
+    transition:transform .3s cubic-bezier(.22,1,.36,1);
+  }
+  .gallery-lightbox.show img{ transform:scale(1); }
+  .gallery-lightbox-close{
+    position:absolute; top:24px; right:28px;
+    width:44px; height:44px; border-radius:50%;
+    border:1px solid var(--line); background:var(--panel); color:var(--text);
+    font-size:26px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .2s ease;
+  }
+  .gallery-lightbox-close:hover{ border-color:var(--accent); }
+
+  /* ---- growing "</>" scroll accent ---- */
+  .code-symbol{
+    margin:50px 0 50px; text-align:center; font-family:'Fira Code', Consolas, monospace;
+    font-size:120px; font-weight:700; line-height:1; color:var(--accent);
+    text-shadow:0 0 30px var(--accent-soft), 0 0 60px var(--accent-soft);
+    transform:scale(0.4); opacity:0.2; transition:transform .4s ease-out, opacity .4s ease-out; user-select:none;
+  }
+  @media (max-width:600px){ .code-symbol{ font-size:70px; } }
+
+  @media (max-width:980px){
+    .about-grid{ grid-template-columns:1fr; }
+    .lanyard-wrap{ position:static; flex-direction:row; gap:20px; justify-content:flex-start; order:-1; margin-bottom:36px; perspective:900px; }
+    .id-card{ width:135px; height:178px; }
+    .about-gallery{ grid-template-columns:repeat(3,1fr); }
+  }
+  @media (max-width:600px){
+    .about-gallery{ grid-template-columns:repeat(2,1fr); gap:10px; }
+    .stat-row{ gap:28px; }
+  }
+  @media (max-width:400px){ .about-gallery{ grid-template-columns:1fr; } }
+
+  /* ============================================================
+     GENERIC CARD GRID (SKILLS / HOBBIES share this look)
+     ============================================================ */
+  .tile-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));
+    gap:22px;
+  }
+  .tile-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:28px 24px;
+    box-shadow:0 16px 32px rgba(0,0,0,.3);
+    transition:transform .2s ease, border-color .2s ease;
+  }
+  .tile-card:hover{ transform:translateY(-4px); border-color:var(--accent); }
+  .tile-card .num{ font-size:11px; color:var(--muted); letter-spacing:1px; margin-bottom:14px; }
+  .tile-card .icon-wrap{
+    width:44px; height:44px; border-radius:10px; background:var(--panel-2);
+    display:flex; align-items:center; justify-content:center; margin-bottom:16px;
+  }
+  .tile-card .icon-wrap svg{ width:22px; height:22px; color:var(--accent); }
+  .tile-card h3{ font-size:15px; letter-spacing:.5px; margin:0 0 10px; }
+  .tile-card p{ font-size:13px; color:var(--muted); line-height:1.7; margin:0 0 16px; }
+  .tag-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .tag-pill{
+    font-size:10px; letter-spacing:.5px; font-weight:700; text-transform:uppercase;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--muted);
+    padding:5px 10px; border-radius:999px;
+  }
+
+  /* ============================================================
+     WORK / PROJECTS (code-editor style cards, reused)
+     ============================================================ */
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  @media (max-width:900px){ .grid2{ grid-template-columns:1fr; } }
+  @media (min-width:1180px){ .live-links-grid{ grid-template-columns:repeat(3, 1fr); } }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:0 20px 40px rgba(0,0,0,.35); position:relative; }
+  .card-head{ display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--panel-2); border-bottom:1px solid var(--line); }
+  .dots{ display:flex; gap:7px; }
+  .dot{ width:11px; height:11px; border-radius:50%; }
+  .dot.red{ background:#ff5f57; } .dot.yellow{ background:#febc2e; } .dot.green{ background:#28c840; }
+  .filename{ margin-left:6px; display:flex; align-items:center; gap:6px; font-size:12.5px; color:#cfd3dd; background:#1c202b; padding:5px 10px; border-radius:6px 6px 0 0; }
+  .filename svg{ width:13px; height:13px; color:var(--muted); }
+  .copy-btn{
+    margin-left:auto; display:flex; align-items:center; gap:6px; font-family:inherit; font-size:11px; font-weight:600;
+    letter-spacing:.4px; color:var(--muted); background:var(--panel); border:1px solid var(--line); padding:5px 10px;
+    border-radius:6px; cursor:pointer; transition:background .2s ease, color .2s ease, border-color .2s ease; flex-shrink:0;
+  }
+  .copy-btn:hover{ color:var(--text); border-color:var(--accent); }
+  .copy-btn svg{ width:13px; height:13px; }
+  .copy-btn.copied{ color:var(--str); border-color:var(--str); }
+  .code{ padding:18px 0; font-family:'Fira Code', Consolas, 'Courier New', monospace; font-size:13px; line-height:1.75; overflow-x:auto; }
+  .code ol{ margin:0; padding:0 20px 0 46px; counter-reset:line; }
+  .code li{ list-style:none; counter-increment:line; position:relative; white-space:pre-wrap; color:var(--text); }
+  .code li::before{ content:counter(line); position:absolute; left:-34px; width:24px; text-align:right; color:#4a4f5e; }
+  .k{color:#ff7b72;} .p{color:var(--prop);} .s{color:var(--str);} .n{color:#d2a8ff;}
+  .preview{ margin:14px 20px 6px; border-radius:8px; overflow:hidden; border:1px solid var(--line); }
+  .preview img{ width:100%; display:block; }
+  .preview-fallback{ height:170px; background:linear-gradient(135deg,#161a23,#1d2230); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:12px; letter-spacing:1px; }
+  .anim-preview{ height:170px; background:linear-gradient(135deg,#161a23,#1d2230); display:flex; align-items:center; justify-content:center; }
+  .live-anim-box{ width:56px; height:56px; background:linear-gradient(135deg, var(--accent), var(--accent2), var(--key)); box-shadow:0 0 30px var(--accent-soft); animation:liveSpin 3.2s ease-in-out infinite; }
+  @keyframes liveSpin{ 0%{ transform:rotate(0deg) scale(1); border-radius:14px; } 50%{ transform:rotate(180deg) scale(1.15); border-radius:50%; } 100%{ transform:rotate(360deg) scale(1); border-radius:14px; } }
+  .wireframe-preview{ height:170px; padding:16px; background:linear-gradient(135deg,#161a23,#1d2230); display:flex; flex-direction:column; gap:10px; }
+  .wf-nav{ height:12px; width:55%; background:var(--panel-2); border:1px solid var(--line); border-radius:4px; }
+  .wf-hero{ flex:1; background:var(--panel-2); border:1px solid var(--line); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; }
+  .wf-line{ height:7px; width:60%; background:var(--line); border-radius:4px; } .wf-line.short{ width:36%; }
+  .wf-btn{ margin-top:6px; width:80px; height:18px; background:var(--accent); border-radius:5px; }
+
+  /* ---- live-link preview card, reused ---- */
+  .link-card{ transition:transform .2s ease, border-color .2s ease; }
+  .link-card:hover{ transform:translateY(-4px); border-color:var(--accent); }
+  .link-preview{
+    position:relative; display:block; margin:14px 20px 16px; border-radius:8px; overflow:hidden; border:1px solid var(--line);
+    aspect-ratio:16/10; background:linear-gradient(135deg,#161a23,#1d2230); text-decoration:none; color:inherit; cursor:pointer;
+  }
+  .link-preview iframe{ width:200%; height:200%; transform:scale(.5); transform-origin:0 0; border:0; pointer-events:none; }
+  .link-preview-fallback{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:var(--muted); font-size:12px; letter-spacing:.5px; text-align:center; padding:0 18px; background:linear-gradient(135deg,#161a23,#1d2230); }
+  .link-preview-fallback svg{ width:28px; height:28px; opacity:.6; }
+  .link-preview.has-preview .link-preview-fallback{ display:none; }
+  .link-open-hint{
+    position:absolute; right:10px; bottom:10px; display:flex; align-items:center; gap:5px; font-size:11px; font-weight:600;
+    letter-spacing:.5px; color:var(--text); background:rgba(10,12,18,.75); backdrop-filter:blur(4px); padding:5px 9px; border-radius:6px;
+    opacity:0; transform:translateY(4px); transition:opacity .2s ease, transform .2s ease;
+  }
+  .link-preview:hover .link-open-hint{ opacity:1; transform:translateY(0); }
+  .link-open-hint svg{ width:12px; height:12px; }
+  .work-sub-label{ margin:56px 0 26px; font-size:12px; font-weight:700; letter-spacing:2px; color:var(--muted); text-transform:uppercase; display:flex; align-items:center; gap:10px; }
+  .work-sub-label::after{ content:""; flex:1; height:1px; background:var(--line); }
+
+  /* ============================================================
+     CONTACT
+     ============================================================ */
+  .contact-grid{ display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:start; }
+  .contact-grid h2{ font-size:clamp(30px, 4.5vw, 46px); line-height:1.15; margin:0 0 20px; font-weight:800; }
+  .contact-grid h2 em{ font-style:italic; font-weight:600; color:var(--muted); display:block; }
+  .contact-grid p{ font-size:14.5px; line-height:1.8; color:#cfd3dd; max-width:440px; margin:0 0 30px; }
+  .connect-card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; box-shadow:0 24px 60px rgba(0,0,0,.4); }
+  .connect-card .connect-title{ display:flex; align-items:center; gap:10px; font-size:13px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text); margin-bottom:18px; }
+  .connect-card .connect-title::before{ content:""; width:20px; height:2px; background:var(--accent); }
+  .connect-list{ display:flex; flex-direction:column; gap:10px; }
+  .connect-row{
+    display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:12px; background:var(--panel-2);
+    border:1px solid var(--line); text-decoration:none; color:var(--text); transition:transform .2s ease, border-color .2s ease;
+  }
+  .connect-row:hover{ transform:translateX(4px); border-color:var(--accent); }
+  .connect-row .c-icon{ width:38px; height:38px; border-radius:9px; background:var(--panel); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .connect-row .c-icon svg{ width:18px; height:18px; color:var(--accent); }
+  .connect-row .c-name{ font-size:13px; font-weight:700; }
+  .connect-row .c-sub{ font-size:11.5px; color:var(--muted); margin-top:1px; }
+
+  @media (max-width:900px){ .contact-grid{ grid-template-columns:1fr; } }
+
+  /* ============================================================
+     FOOTER + SCROLL TO TOP
+     ============================================================ */
+  footer{
+    border-top:1px solid var(--line);
+    padding:30px 0 50px;
+    text-align:center;
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.3px;
+  }
+  footer b{ color:var(--text); }
+  .to-top{
+    position:fixed; right:22px; bottom:22px; z-index:60;
+    width:48px; height:48px; border-radius:50%;
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 14px 30px var(--accent-soft);
+    border:none; cursor:pointer; color:#0b0d12;
+    opacity:0; pointer-events:none; transform:translateY(10px);
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .to-top.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
+  .to-top svg{ width:20px; height:20px; }
+
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     DARK VEIL — animated WebGL background, sits behind everything
+     (built via the darkveil-widget project — see script tags near
+     the end of <body>)
+     ================================================================ -->
+<div
+  id="darkveilBg"
+  data-darkveil-badge
+  data-hue-shift="5"
+  data-speed="0.4"
+  data-warp="0.3"
+  data-noise="0.05"
+></div>
+
+<!-- GALLERY LIGHTBOX — click-to-zoom overlay for the DriftWall gallery -->
+<div class="gallery-lightbox" id="galleryLightbox">
+  <button class="gallery-lightbox-close" id="galleryLightboxClose" aria-label="Close">&times;</button>
+  <img src="" alt="" id="galleryLightboxImg">
+</div>
+
+<!-- ================================================================
+     LOADING SCREEN — shown first, fades out once "loaded"
+     ================================================================ -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="load-rings">
+    <div class="load-ring r1"></div>
+    <div class="load-ring r2"></div>
+    <div class="load-logo">&lt;/&gt;</div>
+  </div>
+  <div class="load-name">Krex Simsiman<span class="dot">.</span></div>
+  <div class="load-tags">WEB DEV · HTML · CSS · JS</div>
+  <div class="load-bar-track"><div class="load-bar-fill" id="loadBarFill"></div></div>
+  <div class="load-status"><span id="loadStatusText">Preparing surfaces</span><b id="loadPercent">0%</b></div>
+</div>
+
+<!-- ================================================================
+     TOP FLOATING NAV — sliding pill highlights whichever section is
+     in view. Click a link to smooth-scroll straight to that section.
+     ================================================================ -->
+<nav class="topnav">
+  <a href="#home" class="brand"><span class="brand-dot"></span> Krex Simsiman</a>
+  <div class="pillnav" id="pillnav">
+    <span class="pill-indicator" id="pillIndicator"></span>
+    <a href="#home" data-target="home" class="active">Home</a>
+    <a href="#about" data-target="about">About</a>
+    <a href="#gallery" data-target="gallery">Gallery</a>
+    <a href="#skills" data-target="skills">Skills</a>
+    <a href="#projects" data-target="projects">Work</a>
+    <a href="#hobbies" data-target="hobbies">Hobbies</a>
+    <a href="#contact" data-target="contact">Contact</a>
+  </div>
+  <a href="#contact" class="cta-btn"><span>Let's Talk</span> →</a>
+</nav>
+
+<main>
+
+  <!-- ============================================================
+       HOME / HERO
+       ============================================================ -->
+  <section id="home" class="hero">
+    <div class="wrap">
+      <div class="hero-grid">
+        <div class="hero-text">
+          <div class="hero-eyebrow"><span class="dot"></span> BASED IN NABUNTURAN, DAVAO DE ORO, PH · OPEN TO LEARN</div>
+          <h1>
+            <span class="lead">I'm building as a</span>
+            <span class="rotate" id="rotateText">Web Developer.</span><span class="cursor">&nbsp;</span>
+          </h1>
+          <p class="lead-p">
+            I'm <b>Krex Simsiman</b>, an aspiring web developer from the Philippines. I turn ideas into small,
+            useful software, from school record systems to simple tools that make everyday tasks easier,
+            while sharpening my <b>HTML, CSS &amp; JavaScript</b>, with Java and Python on the side.
+          </p>
+          <div class="hero-actions">
+            <a href="#projects" class="btn btn-primary">View Projects →</a>
+            <a href="#contact" class="btn btn-ghost">Let's Talk</a>
+          </div>
+          <div class="hero-socials">
+            <span class="follow-text">Follow me</span>
+            <a href="https://github.com/Krexsims" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12a11.5 11.5 0 0 0 7.9 11c.6.1.8-.3.8-.6v-2.2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5Z"/></svg></a>
+            <a href="https://www.instagram.com/krex.sims/" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg></a>
+            <a href="https://www.facebook.com/krex.simsiman.3" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg></a>
+          </div>
+
+          <!-- GITHUB-STYLE PIXEL ART — purely decorative, spells a word
+               using the same green-square look as a contribution heatmap
+               (month/day labels included for authenticity). No real data,
+               no external calls. See initContribArt script near the end
+               of <body> to change the word. -->
+          <div class="gh-contrib" id="ghContrib" aria-label="Decorative contribution-style calendar">
+            <div class="gh-contrib-head">
+              <span id="ghContribCount">Contributions in the last year</span>
+            </div>
+            <div class="gh-contrib-scroll">
+              <div class="gh-contrib-cal">
+                <div class="gh-contrib-months" id="ghContribMonths"></div>
+                <div class="gh-contrib-body">
+                  <div class="gh-contrib-days">
+                    <span></span><span>Mon</span><span></span><span>Wed</span><span></span><span>Fri</span><span></span>
+                  </div>
+                  <div class="gh-contrib-grid" id="ghContribGrid"></div>
+                </div>
+                <div class="gh-contrib-foot">
+                  <span class="gh-contrib-legend" id="ghContribLegend">Less<span class="gh-cell"></span><span class="gh-cell"></span><span class="gh-cell"></span><span class="gh-cell"></span><span class="gh-cell"></span>More</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Draggable ID card — moved here from About so it's the hero's
+             right-side visual. React widget mount point (built via the
+             lanyard-badge project's `npm run build:widget`). No ids — the
+             widget script finds this via the data-lanyard-badge attribute. -->
+        <div class="lanyard-wrap">
+          <div
+            data-lanyard-badge
+            data-photo-src="profile.jpg"
+            data-back-src="back-design.png"
+            data-photo-alt="Krex Simsiman"
+            data-hint="Drag the ID card"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TECH LOGO LOOP — decorative divider that fills the blank
+       space between Home and About with an infinite scrolling strip
+       of white tech-stack logos. Vanilla port of React Bits' LogoLoop
+       (CSS keyframe scroll instead of a rAF/React version — no build
+       step needed). Logos are inlined SVG path data (built in the
+       initLogoLoop script near the end of <body>) rather than loaded
+       from an external icon CDN, so there's nothing to fail at
+       runtime. Edit the TECH_LOGOS array in that script to change
+       the stack — the strip is duplicated automatically for the
+       seamless loop.
+       ============================================================ -->
+  <div class="logo-loop" aria-label="Tech stack">
+    <div class="logo-loop-track" id="logoLoopTrack"></div>
+  </div>
+
+  <!-- ============================================================
+       ABOUT
+       ============================================================ -->
+  <section id="about" class="page-block">
+    <div class="wrap">
+      <div class="eyebrow">01 · About Me</div>
+      <div class="about-grid">
+        <div>
+          <h2><span class="hi">Hello, I'm</span>Krex Simsiman.</h2>
+          <div class="about-text">
+            <p>
+              I am an aspiring web developer from Nabunturan, Davao de Oro, Philippines. I enjoy turning ideas
+              into useful software, from school record systems to simple tools that make everyday tasks easier.
+              I am currently improving my skills through personal projects and hands-on practice, with a focus
+              on web development.
+            </p>
+            <p>
+              I studied at <b>Legacy College of Compostela</b>, where I first discovered programming through
+              simple class activities. That encouraged me to learn more about web development and programming
+              outside the classroom, so I keep practicing by following tutorials, experimenting with ideas, and
+              building small projects to improve my skills.
+            </p>
+            <p>
+              A lot of my early exposure to computers came from curiosity more than formal training, taking
+              things apart (digitally, and sometimes literally) just to understand how they worked. That habit
+              carried over into how I learn to code now: I'd rather break something on purpose and figure out
+              why it broke than just follow a tutorial word for word.
+            </p>
+            <p>
+              I usually start any new idea on paper before touching code, a rough sketch of the layout, then a
+              short list of the features I actually need for a first version, then build in small, working
+              pieces instead of trying to finish everything at once. Most of my day-to-day work happens in
+              <b>VS Code</b>, with <b>Git and GitHub</b> for version control. Right now I'm focused on getting
+              more comfortable with JavaScript beyond the basics; longer term I want to explore a backend
+              language and a database so I can build full projects instead of front-end-only pages.
+            </p>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat"><b>5</b><span>Languages Learning</span></div>
+            <div class="stat"><b>4</b><span>Practice Builds</span></div>
+            <div class="stat"><b>1</b><span>Portfolio, Always Growing</span></div>
+          </div>
+
+          <div class="about-actions">
+            <a href="#projects" class="btn btn-primary">View Projects →</a>
+            <a href="#contact" class="btn btn-ghost">Get in touch</a>
+          </div>
+        </div>
+
+        <!-- Profile card + Skill Stack/games carousel — moved here from Home,
+             sits on the right side of the About grid (same column the
+             Lanyard card used to occupy). -->
+        <div class="side-stack">
+          <div class="hero-panel-carousel">
+            <button class="panel-nav-btn prev" id="panelPrevBtn" aria-label="Show profile card" disabled>‹</button>
+            <button class="panel-nav-btn next" id="panelNextBtn" aria-label="Show skill stack">›</button>
+
+            <div class="hero-panel-track" id="heroPanelTrack">
+
+              <!-- PAGE 1: PROFILE CARD (React Bits component, built via the
+                   profile-card-widget project — see the script tags near the
+                   end of <body>) -->
+              <div class="hero-panel-page">
+                <div
+                  data-profile-card-badge
+                  data-avatar-src="profilecard.jpg"
+                  data-name="Krex Simsiman"
+                  data-title="Web Developer"
+                  data-handle="krexsims"
+                  data-status="Online"
+                  data-contact-text="Contact Me"
+                ></div>
+              </div>
+
+              <!-- PAGE 2: SKILL STACK + GAMES (unchanged) -->
+              <div class="hero-panel-page">
+                <!-- SKILL STACK CARD -->
+                <div class="skill-panel">
+                  <div class="skill-panel-head">
+                    <div class="label"><span class="dot"></span> Skill Stack</div>
+                    <div class="hint">Hover to explore</div>
+                  </div>
+                  <div class="skill-tiles">
+                    <div class="skill-tile">
+                      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div>
+                      <h4>HTML &amp; CSS</h4>
+                      <div class="bar"><span style="width:78%"></span></div>
+                      <div class="status">Comfortable</div>
+                      <div class="blurb">Semantic structure plus Flexbox/Grid layouts, transitions and the animations across this page.</div>
+                    </div>
+                    <div class="skill-tile">
+                      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg></div>
+                      <h4>JavaScript</h4>
+                      <div class="bar"><span style="width:65%"></span></div>
+                      <div class="status">Building with it</div>
+                      <div class="blurb">DOM manipulation, events and small interactive features, like the two self-playing games below.</div>
+                    </div>
+                    <div class="skill-tile">
+                      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+                      <h4>Java</h4>
+                      <div class="bar"><span style="width:40%"></span></div>
+                      <div class="status">Learning</div>
+                      <div class="blurb">Classes, methods and control flow through small console programs.</div>
+                    </div>
+                    <div class="skill-tile">
+                      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></div>
+                      <h4>Python</h4>
+                      <div class="bar"><span style="width:38%"></span></div>
+                      <div class="status">Learning</div>
+                      <div class="blurb">Simple syntax for practicing logic and testing ideas quickly.</div>
+                    </div>
+                    <div class="skill-tile">
+                      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4.2"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(120 12 12)"/></svg></div>
+                      <h4>React &amp; Vite</h4>
+                      <div class="bar"><span style="width:30%"></span></div>
+                      <div class="status">Currently exploring</div>
+                      <div class="blurb">Started experimenting with components and the Vite dev server after getting comfortable with plain JavaScript, used it to build the widgets on this page.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- IDLE GAME CARDS — snake + spaceship, unchanged logic from the original site -->
+                <div class="games-row">
+                  <div class="snake-card">
+                    <div class="card-head">
+                      <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                      <div class="filename">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+                        idle_snake.js
+                      </div>
+                    </div>
+                    <canvas id="snakeCanvas" width="252" height="182"></canvas>
+                  </div>
+                  <div class="snake-card">
+                    <div class="card-head">
+                      <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+                      <div class="filename">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+                        idle_shooter.js
+                      </div>
+                    </div>
+                    <canvas id="shooterCanvas" width="252" height="182"></canvas>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="code-symbol" id="codeSymbol" aria-hidden="true">&lt;/&gt;</div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       GALLERY — React Bits DriftWall component, full-width so the
+       drifting columns have real room. Built via the driftwall-widget
+       project (see script tags near the end of <body>).
+       ============================================================ -->
+  <section id="gallery" class="page-block">
+    <div class="wrap">
+      <div class="eyebrow">02 · Photo Gallery</div>
+      <h2 class="section-title">A few <em>snapshots.</em></h2>
+
+      <div
+        class="about-gallery-driftwall"
+        data-driftwall-badge
+        data-img-1="gallerypic1.jpg"
+        data-img-2="gallerypic2.jpg"
+        data-img-3="gallerypic3.jpg"
+        data-img-4="gallerypic4.jpg"
+        data-img-5="gallerypic5.jpg"
+        data-img-6="gallerypic6.jpg"
+        data-img-7="gallerypic7.jpg"
+        data-img-8="gallerypic8.jpg"
+        data-img-9="gallerypic9.jpg"
+        data-img-10="gallerypic10.jpg"
+        data-img-11="gallerypic11.jpg"
+        data-img-12="gallerypic12.jpg"
+        data-img-13="gallerypic13.jpg"
+        data-img-14="gallerypic14.jpg"
+        data-img-15="gallerypic15.jpg"
+        data-img-16="gallerypic16.jpg"
+        data-img-17="gallerypic17.jpg"
+        data-img-18="gallerypic18.jpg"
+        data-img-19="gallerypic19.jpg"
+        data-img-20="gallerypic20.jpg"
+        data-img-21="gallerypic21.jpg"
+        data-img-22="gallerypic22.jpg"
+        data-img-23="gallerypic23.jpg"
+        data-img-24="gallerypic24.jpg"
+        data-img-25="gallerypic25.jpg"
+      ></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SKILLS — "what I'm learning", styled like a services grid
+       ============================================================ -->
+  <section id="skills" class="page-block">
+    <div class="wrap">
+      <div class="eyebrow">03 · What I'm Learning</div>
+      <h2 class="section-title">Skills &amp; <em>fundamentals.</em></h2>
+      <div class="tile-grid">
+        <div class="tile-card">
+          <div class="num">01</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg></div>
+          <h3>HTML: Structure</h3>
+          <p>Structuring a page with semantic tags like header, section and footer, plus forms and tables, so the content makes sense before styling.</p>
+          <div class="tag-row"><span class="tag-pill">Semantic</span><span class="tag-pill">Forms</span></div>
+        </div>
+        <div class="tile-card">
+          <div class="num">02</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 8l7-5 7 5M5 8v8l7 5 7-5V8"/></svg></div>
+          <h3>CSS: Style &amp; Layout</h3>
+          <p>The box model, Flexbox and Grid, plus the small transitions and animations scattered around this page.</p>
+          <div class="tag-row"><span class="tag-pill">Flexbox</span><span class="tag-pill">Grid</span><span class="tag-pill">Animation</span></div>
+        </div>
+        <div class="tile-card">
+          <div class="num">03</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg></div>
+          <h3>JavaScript: Interactivity</h3>
+          <p>DOM manipulation, events and small interactive features: the sliding nav, the draggable ID card, and the two self-playing games on this page.</p>
+          <div class="tag-row"><span class="tag-pill">DOM</span><span class="tag-pill">Events</span></div>
+        </div>
+        <div class="tile-card">
+          <div class="num">04</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
+          <h3>Java: Fundamentals</h3>
+          <p>The fundamentals of object-oriented programming, classes, methods and control flow, through simple console programs.</p>
+          <div class="tag-row"><span class="tag-pill">OOP</span><span class="tag-pill">Console Apps</span></div>
+        </div>
+        <div class="tile-card">
+          <div class="num">05</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M8 12h8M12 8v8"/></svg></div>
+          <h3>Python: Logic &amp; Practice</h3>
+          <p>Simpler syntax to practice logic and basic data handling, an easy way to test an idea before applying it elsewhere.</p>
+          <div class="tag-row"><span class="tag-pill">Logic</span><span class="tag-pill">Practice</span></div>
+        </div>
+        <div class="tile-card">
+          <div class="num">06</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4.2"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4.2" transform="rotate(120 12 12)"/></svg></div>
+          <h3>React &amp; Vite</h3>
+          <p>Building components with React and using Vite's dev server to bundle them, the same setup behind the interactive widgets on this page.</p>
+          <div class="tag-row"><span class="tag-pill">Components</span><span class="tag-pill">Vite</span></div>
+        </div>
+        <div class="tile-card">
+          <div class="num">07</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="12" rx="6"/><path d="M7 11v4M5 13h4"/><circle cx="15.5" cy="11.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="18" cy="14" r="1.2" fill="currentColor" stroke="none"/></svg></div>
+          <h3>Game Development: Basics</h3>
+          <p>Building small browser games with the Canvas API, game loops and collision detection, like the self-playing snake and shooter demos on the Home page.</p>
+          <div class="tag-row"><span class="tag-pill">Canvas API</span><span class="tag-pill">Game Loops</span></div>
+        </div>
+        <div class="tile-card">
+          <div class="num">08</div>
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12c2-6 4 6 6 0s4 6 6 0 4 6 6 0"/></svg></div>
+          <h3>Physics &amp; Animation</h3>
+          <p>Simulating movement, gravity and momentum for interactive elements, like the draggable lanyard ID card that swings and settles on this site.</p>
+          <div class="tag-row"><span class="tag-pill">Motion</span><span class="tag-pill">Interaction</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       WORK / PROJECTS — live links only. Each card below is a real
+       deployed site: swap the href on the .link-preview and the
+       filename text to add your own projects.
+       ============================================================ -->
+  <section id="projects" class="page-block">
+    <div class="wrap">
+      <div class="eyebrow">04 · Selected Work</div>
+      <h2 class="section-title">Things I've <em>built.</em></h2>
+
+      <div class="grid2 live-links-grid" id="projectsGrid">
+
+        <!-- LIVE LINK 1 -->
+        <div class="link-card card">
+          <div class="card-head">
+            <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+            <div class="filename">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>
+              Photobooth
+            </div>
+          </div>
+          <a class="link-preview" href="https://krexsims.github.io/Photobooth/" target="_blank" rel="noopener" data-preview-url="">
+            <iframe loading="lazy" title="Photobooth site preview" tabindex="-1"></iframe>
+            <div class="link-preview-fallback">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>
+              <span>Add your link above to preview</span>
+            </div>
+            <div class="link-open-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>
+              Open
+            </div>
+          </a>
+        </div>
+
+        <!-- LIVE LINK 2 — replace href="#" and the filename text with
+             your next project once it's deployed -->
+        <div class="link-card card">
+          <div class="card-head">
+            <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+            <div class="filename">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>
+              Birthday Gift
+            </div>
+          </div>
+          <a class="link-preview" href="https://krexsims.github.io/bday/" target="_blank" rel="noopener" data-preview-url="">
+            <iframe loading="lazy" title="Project 2 site preview" tabindex="-1"></iframe>
+            <div class="link-preview-fallback">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>
+              <span>Add your link above to preview</span>
+            </div>
+            <div class="link-open-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>
+              Open
+            </div>
+          </a>
+        </div>
+
+        <!-- LIVE LINK 3 — replace href="#" and the filename text with
+             your next project once it's deployed -->
+        <div class="link-card card">
+          <div class="card-head">
+            <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+            <div class="filename">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>
+              Project 3
+            </div>
+          </div>
+          <a class="link-preview" href="#" target="_blank" rel="noopener" data-preview-url="">
+            <iframe loading="lazy" title="Project 3 site preview" tabindex="-1"></iframe>
+            <div class="link-preview-fallback">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>
+              <span>Add your link above to preview</span>
+            </div>
+            <div class="link-open-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M7 7h10v10"/></svg>
+              Open
+            </div>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       HOBBIES
+       ============================================================ -->
+  <section id="hobbies" class="page-block">
+    <div class="wrap">
+      <div class="eyebrow">05 · Beyond The Code</div>
+      <h2 class="section-title">What I <em>enjoy.</em></h2>
+      <div class="tile-grid">
+        <div class="tile-card">
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg></div>
+          <h3>Coding</h3>
+          <p>Building small web apps and experimenting with new frameworks in my free time.</p>
+        </div>
+        <div class="tile-card">
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h.01M18 12h.01M9 12h6"/></svg></div>
+          <h3>Gaming</h3>
+          <p>Unwinding with story-driven and strategy games after a long coding session.</p>
+        </div>
+        <div class="tile-card">
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 8l7-5 7 5M5 8v8l7 5 7-5V8"/></svg></div>
+          <h3>Design</h3>
+          <p>Sketching UI ideas and exploring layouts before turning them into code.</p>
+        </div>
+        <div class="tile-card">
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
+          <h3>Music</h3>
+          <p>Listening to lo-fi and OPM tracks while working through project tasks.</p>
+        </div>
+        <div class="tile-card">
+          <div class="icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9M12 12l5-2"/></svg></div>
+          <h3>Animation</h3>
+          <p>Playing with CSS keyframes and transitions to bring flat designs to life, like the ones on this page.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CONTACT
+       ============================================================ -->
+  <section id="contact" class="page-block">
+    <div class="wrap">
+      <div class="eyebrow">06 · Get In Touch</div>
+      <div class="contact-grid">
+        <div>
+          <h2>Have a project? <em>Let's talk.</em></h2>
+          <p>
+            I'm always open to feedback, small collaborations, or just a chat about web development.
+            The fastest way to reach me is email or any of the socials on the right.
+          </p>
+          <a href="mailto:krexsims@gmail.com" class="btn btn-primary">Email Me →</a>
+        </div>
+        <div class="connect-card">
+          <div class="connect-title">Connect With Me</div>
+          <div class="connect-list">
+            <a href="mailto:krexsims@gmail.com" class="connect-row">
+              <div class="c-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></div>
+              <div><div class="c-name">Email</div><div class="c-sub">krexsims@gmail.com</div></div>
+            </a>
+            <a href="https://github.com/Krexsims" class="connect-row">
+              <div class="c-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12a11.5 11.5 0 0 0 7.9 11c.6.1.8-.3.8-.6v-2.2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.9 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.5 11.5 0 0 0 23.5 12C23.5 5.7 18.3.5 12 .5Z"/></svg></div>
+              <div><div class="c-name">GitHub</div><div class="c-sub">@Krexsims</div></div>
+            </a>
+            <a href="https://www.instagram.com/krex.sims/" class="connect-row">
+              <div class="c-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg></div>
+              <div><div class="c-name">Instagram</div><div class="c-sub">@krexsims</div></div>
+            </a>
+            <a href="https://www.facebook.com/krex.simsiman.3" class="connect-row">
+              <div class="c-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.4h-1.2c-1.2 0-1.6.8-1.6 1.6V12h2.8l-.4 2.9h-2.4v7A10 10 0 0 0 22 12Z"/></svg></div>
+              <div><div class="c-name">Facebook</div><div class="c-sub">Krex Simsiman</div></div>
+            </a>
+            <a href="#" class="connect-row">
+              <div class="c-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 3c.4 2 1.8 3.6 4 4v2.7a7 7 0 0 1-4-1.3v6.4a5.7 5.7 0 1 1-5.7-5.7c.3 0 .6 0 .9.1v2.8a3 3 0 1 0 2.1 2.8V3H14Z"/></svg></div>
+              <div><div class="c-name">TikTok</div><div class="c-sub">@KZ</div></div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Built by <b>Krex Simsiman</b> with HTML, CSS &amp; JavaScript · Nabunturan, Davao de Oro, PH
+  </footer>
+
+</main>
+
+<!-- ================================================================
+     PHOTO ZOOM MODAL — for the 3 About-page gallery photos only
+     (the ID card itself no longer opens a zoom modal — drag it instead)
+     ================================================================ -->
+<div class="modal-overlay" id="photoModalOverlay">
+  <button class="modal-close" id="photoModalClose" aria-label="Close">✕</button>
+  <div class="photo-modal-card">
+    <img id="photoModalImg" src="" alt="">
+  </div>
+</div>
+
+<!-- Scroll to top -->
+<button class="to-top" id="toTop" aria-label="Scroll to top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script>
+  /* ==============================================================
+     TOP NAV — sliding pill indicator + scrollspy + smooth scroll
+     ============================================================== */
+  const pillnav = document.getElementById('pillnav');
+  const pillLinks = Array.from(pillnav.querySelectorAll('a'));
+  const pillIndicator = document.getElementById('pillIndicator');
+  const navSections = pillLinks.map(l => document.getElementById(l.dataset.target)).filter(Boolean);
+
+  function movePill(link){
+    if (!link) return;
+    const navRect = pillnav.getBoundingClientRect();
+    const r = link.getBoundingClientRect();
+    pillIndicator.style.width = r.width + 'px';
+    pillIndicator.style.transform = `translateX(${r.left - navRect.left - 4}px)`;
+  }
+
+  function setActive(id){
+    pillLinks.forEach(l => l.classList.toggle('active', l.dataset.target === id));
+    const activeLink = pillLinks.find(l => l.dataset.target === id);
+    movePill(activeLink);
+  }
+
+  pillLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const target = document.getElementById(link.dataset.target);
+      if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
+      setActive(link.dataset.target);
+    });
+  });
+
+  const spy = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) setActive(entry.target.id);
+    });
+  }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+  navSections.forEach(s => spy.observe(s));
+
+  window.addEventListener('load', () => setActive('home'));
+  window.addEventListener('resize', () => {
+    const current = pillLinks.find(l => l.classList.contains('active'));
+    movePill(current);
+  });
+
+  /* ==============================================================
+     HERO ROTATING ROLE TEXT (type / delete loop)
+     ============================================================== */
+  (function initRotate(){
+    const el = document.getElementById('rotateText');
+    if (!el) return;
+    const words = ['Web Developer.', 'Aspiring Coder.', 'Gamer.', 'Krex Simsiman.'];
+    let wi = 0, ci = 0, deleting = false;
+
+    function tick(){
+      const word = words[wi];
+      ci += deleting ? -1 : 1;
+      el.textContent = word.slice(0, ci);
+
+      let delay = deleting ? 45 : 85;
+      if (!deleting && ci === word.length){ delay = 1400; deleting = true; }
+      else if (deleting && ci === 0){ deleting = false; wi = (wi + 1) % words.length; delay = 300; }
+
+      setTimeout(tick, delay);
+    }
+    tick();
+  })();
+
+  /* ==============================================================
+     SCROLL TO TOP BUTTON
+     ============================================================== */
+  const toTop = document.getElementById('toTop');
+  window.addEventListener('scroll', () => {
+    toTop.classList.toggle('show', window.scrollY > 500);
+  }, { passive:true });
+  toTop.addEventListener('click', () => window.scrollTo({ top:0, behavior:'smooth' }));
+
+  /* ==============================================================
+     LOADING SCREEN
+     A short simulated progress bar (this is a static file with
+     nothing real to wait for), then the splash fades out.
+     ============================================================== */
+  (function initLoader(){
+    const screen = document.getElementById('loadingScreen');
+    if (!screen) return;
+    const fill = document.getElementById('loadBarFill');
+    const percentEl = document.getElementById('loadPercent');
+    const statusEl = document.getElementById('loadStatusText');
+    const statuses = ['Preparing surfaces', 'Loading assets', 'Warming up games', 'Almost there'];
+    let progress = 0;
+
+    const timer = setInterval(() => {
+      progress += Math.random() * 16 + 6;
+      if (progress >= 100){
+        progress = 100;
+        clearInterval(timer);
+        setTimeout(() => screen.classList.add('hide'), 300);
+      }
+      fill.style.width = progress + '%';
+      percentEl.textContent = Math.floor(progress) + '%';
+      const si = Math.min(statuses.length - 1, Math.floor((progress / 100) * statuses.length));
+      statusEl.textContent = statuses[si];
+    }, 220);
+
+    // safety net: never let the splash block the site for more than ~3.5s
+    setTimeout(() => screen.classList.add('hide'), 3500);
+  })();
+
+  /* ==============================================================
+     CONTRIBUTION-STYLE PIXEL ART — purely decorative. Spells a word
+     using the same green-square look as a GitHub contribution graph,
+     no real data or network calls involved. Change WORD below (only
+     letters with a pattern in FONT will render) to customize it.
+     Cells start dim and light up left-to-right on a stagger, then the
+     whole thing quietly resets and replays every so often.
+     ============================================================== */
+  (function initContribArt(){
+    const grid      = document.getElementById('ghContribGrid');
+    const monthsRow = document.getElementById('ghContribMonths');
+    const countEl   = document.getElementById('ghContribCount');
+    const legend    = document.getElementById('ghContribLegend');
+    if (!grid) return;
+
+    // Each letter is a 5-row x 3-col dot pattern ('1' = lit cell).
+    const FONT = {
+      H: ['101','101','111','101','101'],
+      I: ['111','010','010','010','111'],
+      C: ['111','100','100','100','111'],
+      R: ['110','101','110','101','101'],
+      U: ['101','101','101','101','111'],
+      S: ['111','100','111','001','111'],
+      L: ['100','100','100','100','111'],
+      O: ['111','101','101','101','111'],
+      V: ['101','101','101','010','010'],
+      E: ['111','100','111','100','111']
+    };
+    // Fixed order: a normal work week, then each message in turn, then
+    // back to the work week (see the cycle() loop near the bottom).
+    const MESSAGES = ['HI CRUSH', 'I LOVE U'];
+    const WEEKS = 53;                 // same as a real GitHub year
+    // GitHub dark-theme green ramp: level 0 (empty) -> level 4 (busiest)
+    const LEVELS = ['var(--line)', '#0e4429', '#006d32', '#26a641', '#39d353'];
+    const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    // ---- date range: 53 whole weeks, snapped to a Sunday, like GitHub ----
+    const today = new Date(); today.setHours(0,0,0,0);
+    const start = new Date(today);
+    start.setDate(start.getDate() - today.getDay() - (WEEKS - 1) * 7);
+
+    // Every cell in the grid, left-to-right / top-to-bottom, so sweeps
+    // read the same direction as the letters do. Cells for "future" dates
+    // just never get random activity — they still render as a normal dim
+    // box, so the calendar always stays a complete, hole-free rectangle.
+    let cells = [];      // { el, w, d, isFuture, workLvl }
+    let workTotal = 0;   // fixed contribution count for the work-week state
+
+    function buildGrid() {
+      grid.innerHTML = '';
+      cells = [];
+      const monthCols = [];
+
+      for (let w = 0; w < WEEKS; w++) {
+        for (let d = 0; d < 7; d++) {
+          const date = new Date(start);
+          date.setDate(start.getDate() + w * 7 + d);
+
+          const cell = document.createElement('div');
+          cell.className = 'gh-cell';
+          cell.style.background = LEVELS[0];
+          grid.appendChild(cell);
+          cells.push({ el: cell, w, d, isFuture: date > today });
+        }
+        // a month label goes above the first week that contains its 1st
+        const wkStart = new Date(start); wkStart.setDate(start.getDate() + w * 7);
+        const wkEnd   = new Date(wkStart); wkEnd.setDate(wkStart.getDate() + 6);
+        if (w === 0 || wkStart.getMonth() !== wkEnd.getMonth() || wkStart.getDate() === 1) {
+          monthCols[w] = MONTH_NAMES[wkEnd.getMonth()];
+        }
+      }
+
+      // ---- month labels, aligned to their real week columns ----
+      if (monthsRow) {
+        monthsRow.innerHTML = '';
+        let lastLabel = null, lastWeek = -99;
+        for (let w = 0; w < WEEKS; w++) {
+          const span = document.createElement('span');
+          if (monthCols[w] && monthCols[w] !== lastLabel && w - lastWeek >= 3) {
+            span.textContent = monthCols[w];
+            lastLabel = monthCols[w];
+            lastWeek = w;
+          }
+          monthsRow.appendChild(span);
+        }
+      }
+
+      if (legend) {
+        legend.querySelectorAll('.gh-cell').forEach((c, i) => { c.style.background = LEVELS[i]; });
+      }
+
+      // Work-week levels are rolled once here and reused every cycle, so
+      // the pattern (and the contribution count shown for it) never
+      // changes between loops -- only the message text changes.
+      workTotal = 0;
+      cells.forEach(cell => {
+        let lvl = 0;
+        if (!cell.isFuture && cell.d >= 1 && cell.d <= 5) {
+          const r = Math.random();
+          lvl = r < 0.4 ? 0 : r < 0.68 ? 1 : r < 0.87 ? 2 : r < 0.96 ? 3 : 4;
+        }
+        cell.workLvl = lvl;
+        if (lvl > 0) workTotal++;
+      });
+
+      // Set once and never touched again -- the count stays put no matter
+      // which state (work week or message) is currently showing.
+      if (countEl) countEl.textContent = workTotal + ' contributions in the last year';
+    }
+
+    // Fades a list of {el, bg} targets in over totalMs, left to right,
+    // in the order given. Returns the total sweep time in ms.
+    function sweepIn(targets, totalMs) {
+      if (!targets.length) return 0;
+      const step = totalMs / targets.length;
+      targets.forEach((t, i) => {
+        setTimeout(() => { t.el.style.background = t.bg; }, i * step);
+      });
+      return targets.length * step;
+    }
+
+    // ---- normal "work days" activity: only Mon-Fri (d 1-5) ever lights
+    //      up, weekends and future days stay empty, like a real 9-to-5
+    //      commit habit. Sweeps in left to right, same as a message. ----
+    function showWorkWeek() {
+      cells.forEach(({ el }) => { el.style.background = LEVELS[0]; });
+      const targets = cells.map(({ el, workLvl }) => ({ el, bg: LEVELS[workLvl] }));
+      return sweepIn(targets, 2600);
+    }
+
+    // ---- spell a message across the calendar, centered, words separated
+    //      by a wider gap than the letters within a word ----
+    function computeLitMap(message) {
+      const words = message.split(' ').map(w => w.split('').filter(ch => FONT[ch]));
+      let totalCols = 0;
+      words.forEach((letters, wi) => {
+        totalCols += letters.length * 3 + Math.max(0, letters.length - 1);
+        if (wi < words.length - 1) totalCols += 2;
+      });
+      const colStart = Math.max(0, Math.floor((WEEKS - totalCols) / 2));
+      const lit = new Set();
+      let col = colStart;
+      words.forEach((letters, wi) => {
+        letters.forEach((letter, li) => {
+          const pattern = FONT[letter];
+          for (let c = 0; c < 3; c++) {
+            for (let r = 0; r < 5; r++) {
+              if (pattern[r][c] === '1') lit.add(col + ',' + (r + 1));
+            }
+            col++;
+          }
+          if (li < letters.length - 1) col++;
+        });
+        if (wi < words.length - 1) col += 2;
+      });
+      return lit;
+    }
+
+    function revealMessage(message) {
+      cells.forEach(({ el }) => { el.style.background = LEVELS[0]; });
+      const litMap = computeLitMap(message);
+      const targets = cells
+        .filter(c => litMap.has(c.w + ',' + c.d))
+        .map(c => ({ el: c.el, bg: LEVELS[(c.w + c.d) % 2 === 0 ? 3 : 4] }));
+      return sweepIn(targets, 1800);
+    }
+
+    // ---- fixed loop: work week -> HI CRUSH -> I LOVE U -> work week ... ----
+    const HOLD = 2600; // how long each state stays fully visible before the next
+    function cycle() {
+      const t0 = showWorkWeek();
+      setTimeout(() => {
+        const t1 = revealMessage(MESSAGES[0]);
+        setTimeout(() => {
+          const t2 = revealMessage(MESSAGES[1]);
+          setTimeout(cycle, t2 + HOLD);
+        }, t1 + HOLD);
+      }, t0 + HOLD);
+    }
+
+    buildGrid();
+    setTimeout(cycle, 250);
+  })();
+
+  /* ==============================================================
+     GALLERY LIGHTBOX — click any photo in the DriftWall gallery to
+     zoom it full-screen. Uses event delegation since the DriftWall
+     tiles are created dynamically by the React widget after mount.
+     ============================================================== */
+  (function initGalleryLightbox(){
+    const galleryRoot = document.querySelector('.about-gallery-driftwall');
+    const lightbox = document.getElementById('galleryLightbox');
+    const lightboxImg = document.getElementById('galleryLightboxImg');
+    const closeBtn = document.getElementById('galleryLightboxClose');
+    if (!galleryRoot || !lightbox || !lightboxImg || !closeBtn) return;
+
+    function openLightbox(src, alt){
+      lightboxImg.src = src;
+      lightboxImg.alt = alt || '';
+      lightbox.classList.add('show');
+    }
+    function closeLightbox(){
+      lightbox.classList.remove('show');
+      setTimeout(() => { lightboxImg.src = ''; }, 300);
+    }
+
+    // pointerdown instead of click: the gallery tiles drift continuously,
+    // so by the time a full click (press+release at the same spot)
+    // resolves, a tile may have moved just enough for the browser to
+    // treat it as a drag instead of a click. pointerdown fires the
+    // instant you press, sidestepping that.
+    //
+    // The gallery also tilts its tiles in 3D (perspective/rotateX/rotateY),
+    // which can make a tile's true clickable hit-box sit slightly off from
+    // where it visually appears, causing some clicks near an edge to miss.
+    // DriftWall already tracks exactly which tile the pointer is over
+    // (it tags it with the "is-active" class as you move across it), so
+    // we ask it directly instead of re-guessing from the click position
+    // ourselves — falling back to a direct hit-test only if that's not
+    // available yet, e.g. a touch tap with no preceding hover.
+    galleryRoot.addEventListener('pointerdown', (e) => {
+      let tile = galleryRoot.querySelector('.drift-wall__tile.is-active');
+      if (!tile) tile = e.target.closest('.drift-wall__tile');
+      if (!tile) return;
+      const img = tile.querySelector('img');
+      if (!img) return;
+      openLightbox(img.src, img.alt);
+    });
+
+    closeBtn.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) closeLightbox();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLightbox();
+    });
+  })();
+
+  /* ==============================================================
+     HERO PANEL CAROUSEL — flips between the Profile Card and the
+     Skill Stack/games panel using the ‹ › arrow buttons.
+     ============================================================== */
+  (function initHeroPanelCarousel(){
+    const track = document.getElementById('heroPanelTrack');
+    const prevBtn = document.getElementById('panelPrevBtn');
+    const nextBtn = document.getElementById('panelNextBtn');
+    if (!track || !prevBtn || !nextBtn) return;
+    let page = 0; // 0 = profile card, 1 = skill stack/games
+
+    function update(){
+      track.style.transform = page === 0 ? 'translateX(0)' : 'translateX(-50%)';
+      prevBtn.disabled = page === 0;
+      nextBtn.disabled = page === 1;
+    }
+    nextBtn.addEventListener('click', () => { page = 1; update(); });
+    prevBtn.addEventListener('click', () => { page = 0; update(); });
+    update();
+  })();
+
+  /* ==============================================================
+     TECH LOGO LOOP
+     Builds the infinite white-logo marquee between Home and About.
+     Logos are inlined as raw SVG path data (from Simple Icons,
+     MIT-licensed) instead of pointed at an external image CDN —
+     the previous version used <img src="https://cdn.simpleicons.org/...">
+     which depended on that third-party proxy staying up and broke
+     silently (Java in particular: Simple Icons doesn't ship an
+     official Java coffee-cup mark since it's an Oracle trademark,
+     so the "java" slug 404s outright — swapped for their OpenJDK
+     duck mark, the closest available equivalent). Inlining removes
+     the network dependency entirely and lets the white color come
+     from plain CSS (fill="currentColor" + color:#fff above).
+     Edit TECH_LOGOS to add/remove/reorder — grab more path data at
+     https://github.com/simple-icons/simple-icons/tree/master/icons
+     ============================================================== */
+  (function initLogoLoop(){
+    const track = document.getElementById('logoLoopTrack');
+    if (!track) return;
+
+    const TECH_LOGOS = [
+      { label: 'HTML5',      path: 'M1.5 0h21l-1.91 21.563L11.977 24l-8.564-2.438L1.5 0zm7.031 9.75l-.232-2.718 10.059.003.23-2.622L5.412 4.41l.698 8.01h9.126l-.326 3.426-2.91.804-2.955-.81-.188-2.11H6.248l.33 4.171L12 19.351l5.379-1.443.744-8.157H8.531z' },
+      { label: 'CSS3',       path: 'M1.5 0h21l-1.91 21.563L11.977 24l-8.565-2.438L1.5 0zm17.09 4.413L5.41 4.41l.213 2.622 10.125.002-.255 2.716h-6.64l.24 2.573h6.182l-.366 3.523-2.91.804-2.956-.81-.188-2.11h-2.61l.29 3.855L12 19.288l5.373-1.53L18.59 4.414z' },
+      { label: 'JavaScript', path: 'M0 0h24v24H0V0zm22.034 18.276c-.175-1.095-.888-2.015-3.003-2.873-.736-.345-1.554-.585-1.797-1.14-.091-.33-.105-.51-.046-.705.15-.646.915-.84 1.515-.66.39.12.75.42.976.9 1.034-.676 1.034-.676 1.755-1.125-.27-.42-.404-.601-.586-.78-.63-.705-1.469-1.065-2.834-1.034l-.705.089c-.676.165-1.32.525-1.71 1.005-1.14 1.291-.811 3.541.569 4.471 1.365 1.02 3.361 1.244 3.616 2.205.24 1.17-.87 1.545-1.966 1.41-.811-.18-1.26-.586-1.755-1.336l-1.83 1.051c.21.48.45.689.81 1.109 1.74 1.756 6.09 1.666 6.871-1.004.029-.09.24-.705.074-1.65l.046.067zm-8.983-7.245h-2.248c0 1.938-.009 3.864-.009 5.805 0 1.232.063 2.363-.138 2.711-.33.689-1.18.601-1.566.48-.396-.196-.597-.466-.83-.855-.063-.105-.11-.196-.127-.196l-1.825 1.125c.305.63.75 1.172 1.324 1.517.855.51 2.004.675 3.207.405.783-.226 1.458-.691 1.811-1.411.51-.93.402-2.07.397-3.346.012-2.054 0-4.109 0-6.179l.004-.056z' },
+      { label: 'Java',       path: 'M11.915 0 11.7.215C9.515 2.4 7.47 6.39 6.046 10.483c-1.064 1.024-3.633 2.81-3.711 3.551-.093.87 1.746 2.611 1.55 3.235-.198.625-1.304 1.408-1.014 1.939.1.188.823.011 1.277-.491a13.389 13.389 0 0 0-.017 2.14c.076.906.27 1.668.643 2.232.372.563.956.911 1.667.911.397 0 .727-.114 1.024-.264.298-.149.571-.33.91-.5.68-.34 1.634-.666 3.53-.604 1.903.062 2.872.39 3.559.704.687.314 1.15.664 1.925.664.767 0 1.395-.336 1.807-.9.412-.563.631-1.33.72-2.24.06-.623.055-1.32 0-2.066.454.45 1.117.604 1.213.424.29-.53-.816-1.314-1.013-1.937-.198-.624 1.642-2.366 1.549-3.236-.08-.748-2.707-2.568-3.748-3.586C16.428 6.374 14.308 2.394 12.13.215zm.175 6.038a2.95 2.95 0 0 1 2.943 2.942 2.95 2.95 0 0 1-2.943 2.943A2.95 2.95 0 0 1 9.148 8.98a2.95 2.95 0 0 1 2.942-2.942zM8.685 7.983a3.515 3.515 0 0 0-.145.997c0 1.951 1.6 3.55 3.55 3.55 1.95 0 3.55-1.598 3.55-3.55 0-.329-.046-.648-.132-.951.334.095.64.208.915.336a42.699 42.699 0 0 1 2.042 5.829c.678 2.545 1.01 4.92.846 6.607-.082.844-.29 1.51-.606 1.94-.315.431-.713.651-1.315.651-.593 0-.932-.27-1.673-.61-.741-.338-1.825-.694-3.792-.758-1.974-.064-3.073.293-3.821.669-.375.188-.659.373-.911.5s-.466.2-.752.2c-.53 0-.876-.209-1.16-.64-.285-.43-.474-1.101-.545-1.948-.141-1.693.176-4.069.823-6.614a43.155 43.155 0 0 1 1.934-5.783c.348-.167.749-.31 1.192-.425zm-3.382 4.362a.216.216 0 0 1 .13.031c-.166.56-.323 1.116-.463 1.665a33.849 33.849 0 0 0-.547 2.555 3.9 3.9 0 0 0-.2-.39c-.58-1.012-.914-1.642-1.16-2.08.315-.24 1.679-1.755 2.24-1.781zm13.394.01c.562.027 1.926 1.543 2.24 1.783-.246.438-.58 1.068-1.16 2.08a4.428 4.428 0 0 0-.163.309 32.354 32.354 0 0 0-.562-2.49 40.579 40.579 0 0 0-.482-1.652.216.216 0 0 1 .127-.03z' },
+      { label: 'Python',     path: 'M14.25.18l.9.2.73.26.59.3.45.32.34.34.25.34.16.33.1.3.04.26.02.2-.01.13V8.5l-.05.63-.13.55-.21.46-.26.38-.3.31-.33.25-.35.19-.35.14-.33.1-.3.07-.26.04-.21.02H8.77l-.69.05-.59.14-.5.22-.41.27-.33.32-.27.35-.2.36-.15.37-.1.35-.07.32-.04.27-.02.21v3.06H3.17l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1.05-.05-1.23.06-1.22.16-1.04.24-.87.32-.71.36-.57.4-.44.42-.33.42-.24.4-.16.36-.1.32-.05.24-.01h.16l.06.01h8.16v-.83H6.18l-.01-2.75-.02-.37.05-.34.11-.31.17-.28.25-.26.31-.23.38-.2.44-.18.51-.15.58-.12.64-.1.71-.06.77-.04.84-.02 1.27.05zm-6.3 1.98l-.23.33-.08.41.08.41.23.34.33.22.41.09.41-.09.33-.22.23-.34.08-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.09zm13.09 3.95l.28.06.32.12.35.18.36.27.36.35.35.47.32.59.28.73.21.88.14 1.04.05 1.23-.06 1.23-.16 1.04-.24.86-.32.71-.36.57-.4.45-.42.33-.42.24-.4.16-.36.09-.32.05-.24.02-.16-.01h-8.22v.82h5.84l.01 2.76.02.36-.05.34-.11.31-.17.29-.25.25-.31.24-.38.2-.44.17-.51.15-.58.13-.64.09-.71.07-.77.04-.84.01-1.27-.04-1.07-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2.01-.13v-5.34l.05-.64.13-.54.21-.46.26-.38.3-.32.33-.24.35-.2.35-.14.33-.1.3-.06.26-.04.21-.02.13-.01h5.84l.69-.05.59-.14.5-.21.41-.28.33-.32.27-.35.2-.36.15-.36.1-.35.07-.32.04-.28.02-.21V6.07h2.09l.14.01zm-6.47 14.25l-.23.33-.08.41.08.41.23.33.33.23.41.08.41-.08.33-.23.23-.33.08-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.08z' },
+      { label: 'Git',        path: 'M23.546 10.93L13.067.452c-.604-.603-1.582-.603-2.188 0L8.708 2.627l2.76 2.76c.645-.215 1.379-.07 1.889.441.516.515.658 1.258.438 1.9l2.658 2.66c.645-.223 1.387-.078 1.9.435.721.72.721 1.884 0 2.604-.719.719-1.881.719-2.6 0-.539-.541-.674-1.337-.404-1.996L12.86 8.955v6.525c.176.086.342.203.488.348.713.721.713 1.883 0 2.6-.719.721-1.889.721-2.609 0-.719-.719-.719-1.879 0-2.598.182-.18.387-.316.605-.406V8.835c-.217-.091-.424-.222-.6-.401-.545-.545-.676-1.342-.396-2.009L7.636 3.7.45 10.881c-.6.605-.6 1.584 0 2.189l10.48 10.477c.604.604 1.582.604 2.186 0l10.43-10.43c.605-.603.605-1.582 0-2.187' },
+      { label: 'GitHub',     path: 'M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12' },
+      { label: 'VS Code',    path: 'M23.15 2.587L18.21.21a1.494 1.494 0 0 0-1.705.29l-9.46 8.63-4.12-3.128a.999.999 0 0 0-1.276.057L.327 7.261A1 1 0 0 0 .326 8.74L3.899 12 .326 15.26a1 1 0 0 0 .001 1.479L1.65 17.94a.999.999 0 0 0 1.276.057l4.12-3.128 9.46 8.63a1.492 1.492 0 0 0 1.704.29l4.942-2.377A1.5 1.5 0 0 0 24 20.06V3.939a1.5 1.5 0 0 0-.85-1.352zm-5.146 14.861L10.826 12l7.178-5.448v10.896z' }
+    ];
+
+    function buildSet(){
+      const frag = document.createDocumentFragment();
+      TECH_LOGOS.forEach(logo => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('role', 'img');
+        svg.setAttribute('aria-label', logo.label);
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+        title.textContent = logo.label;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('fill', 'currentColor');
+        path.setAttribute('d', logo.path);
+        svg.appendChild(title);
+        svg.appendChild(path);
+        frag.appendChild(svg);
+      });
+      return frag;
+    }
+
+    // Fixed-count duplication (exactly 2 sets) only loops seamlessly
+    // when one set is already wider than the viewport. On a wide
+    // monitor 2 sets of 8 small icons can be narrower than the
+    // screen, so the strip runs out of icons mid-loop and looks like
+    // it "stops" / gets cut off on the right. Fix: keep adding sets
+    // until the track is comfortably wider than the visible area
+    // (3x, with a generous guard so it also covers ultrawide/4K/
+    // multi-monitor-spanning windows), then measure the exact pixel
+    // width of ONE repeat (distance from icon 0 to the first icon of
+    // the next set) and animate by that many pixels instead of a
+    // guessed "-50%" — so it tiles correctly and loops seamlessly at
+    // any screen width.
+    const PX_PER_SECOND = 60; // constant visual speed regardless of how many copies get built
+    const itemsPerSet = TECH_LOGOS.length;
+
+    function layout(){
+      track.style.animation = 'none';
+      track.innerHTML = '';
+      track.appendChild(buildSet());
+
+      const container = track.parentElement;
+      const viewport = Math.max(
+        container ? container.clientWidth : 0,
+        window.innerWidth || 0,
+        document.documentElement.clientWidth || 0
+      );
+      const targetWidth = viewport * 3;
+      let guard = 0;
+      while (track.scrollWidth < targetWidth && guard < 60){
+        track.appendChild(buildSet());
+        guard++;
+      }
+
+      const first = track.children[0];
+      const repeatStart = track.children[itemsPerSet];
+      const repeatWidth = repeatStart
+        ? repeatStart.getBoundingClientRect().left - first.getBoundingClientRect().left
+        : track.scrollWidth;
+
+      track.style.setProperty('--loop-shift', `-${repeatWidth}px`);
+      track.style.animationDuration = `${repeatWidth / PX_PER_SECOND}s`;
+      // Re-trigger the animation now that the duration/shift are set.
+      void track.offsetWidth;
+      track.style.animation = '';
+    }
+
+    layout();
+    // Re-measure once everything (fonts, images, layout shifts from
+    // the nav/hero above it) has fully settled, in case that changed
+    // the container's real width right after the first pass.
+    window.addEventListener('load', layout);
+
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(layout, 200);
+    });
+  })();
+
+  /* ==============================================================
+     ABOUT SECTION — "</>" SYMBOL THAT GROWS AS YOU SCROLL
+     ============================================================== */
+  (function initCodeSymbol(){
+    const codeSymbol = document.getElementById('codeSymbol');
+    if (!codeSymbol) return;
+    function update(){
+      const elRect = codeSymbol.getBoundingClientRect();
+      const start = window.innerHeight;
+      const end   = window.innerHeight * 0.45;
+      let progress = (start - elRect.top) / (start - end);
+      progress = Math.max(0, Math.min(1, progress));
+      const scale   = 0.4 + progress * 1.0;
+      const opacity = 0.2 + progress * 0.8;
+      codeSymbol.style.transform = `scale(${scale.toFixed(3)})`;
+      codeSymbol.style.opacity   = opacity.toFixed(3);
+    }
+    window.addEventListener('scroll', update, { passive:true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+
+  /* ==============================================================
+     DRAGGABLE + BOUNCY ID CARD is now handled by the React widget
+     (lanyard-badge.js, loaded near the end of <body>). It finds its
+     mount point via [data-lanyard-badge] — see the lanyard-wrap div
+     in the About section above.
+     ============================================================== */
+
+  /* ==============================================================
+     ABOUT PHOTO ZOOM MODAL
+     ============================================================== */
+  const photoModalOverlay = document.getElementById('photoModalOverlay');
+  const photoModalClose   = document.getElementById('photoModalClose');
+  const photoModalImg     = document.getElementById('photoModalImg');
+  function openPhotoModal(photoEl){
+    const img = photoEl.querySelector('img');
+    if (!img || photoEl.classList.contains('no-img')) return;
+    photoModalImg.src = img.src;
+    photoModalImg.alt = img.alt;
+    photoModalOverlay.classList.add('open');
+  }
+  function closePhotoModal(){ photoModalOverlay.classList.remove('open'); }
+  document.querySelectorAll('.about-photo').forEach(photoEl => {
+    photoEl.addEventListener('click', () => openPhotoModal(photoEl));
+    photoEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPhotoModal(photoEl); }
+    });
+  });
+  photoModalClose.addEventListener('click', closePhotoModal);
+  photoModalOverlay.addEventListener('click', e => { if (e.target === photoModalOverlay) closePhotoModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhotoModal(); });
+
+  /* ==============================================================
+     AMBIENT SNAKE ANIMATION — self-playing, purely decorative
+     ============================================================== */
+  (function initSnake(){
+    const canvas = document.getElementById('snakeCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const CELL = 14;
+    const GRID_COLS = Math.floor(canvas.width / CELL);
+    const GRID_ROWS = Math.floor(canvas.height / CELL);
+    const TICK_MS = 160;
+
+    let snake, dir, food, alive;
+
+    function randomCell(){
+      return { x: Math.floor(Math.random() * GRID_COLS), y: Math.floor(Math.random() * GRID_ROWS) };
+    }
+    function placeFood(){
+      let f;
+      do { f = randomCell(); } while (snake.some(s => s.x === f.x && s.y === f.y));
+      food = f;
+    }
+    function resetGame(){
+      const startX = Math.floor(GRID_COLS / 2);
+      const startY = Math.floor(GRID_ROWS / 2);
+      snake = [ {x:startX,y:startY}, {x:startX-1,y:startY}, {x:startX-2,y:startY} ];
+      dir = { x:1, y:0 };
+      alive = true;
+      placeFood();
+    }
+    function chooseDirection(){
+      const head = snake[0];
+      const options = [
+        {x:1,y:0}, {x:-1,y:0}, {x:0,y:1}, {x:0,y:-1}
+      ].filter(d => !(d.x === -dir.x && d.y === -dir.y));
+
+      const scored = options.map(d => {
+        const nx = head.x + d.x, ny = head.y + d.y;
+        const hitsSelf = snake.some((s,i) => i > 0 && s.x === (nx+GRID_COLS)%GRID_COLS && s.y === (ny+GRID_ROWS)%GRID_ROWS);
+        const dist = Math.abs(food.x - nx) + Math.abs(food.y - ny);
+        return { d, safe: !hitsSelf, dist };
+      });
+
+      const safeMoves = scored.filter(m => m.safe);
+      if (safeMoves.length === 0) return dir;
+      safeMoves.sort((a,b) => a.dist - b.dist);
+      if (Math.random() < 0.85) return safeMoves[0].d;
+      return safeMoves[Math.floor(Math.random() * safeMoves.length)].d;
+    }
+    function step(){
+      if (!alive) return;
+      dir = chooseDirection();
+      const head = snake[0];
+      let nx = (head.x + dir.x + GRID_COLS) % GRID_COLS;
+      let ny = (head.y + dir.y + GRID_ROWS) % GRID_ROWS;
+
+      const hitsSelf = snake.some(s => s.x === nx && s.y === ny);
+      if (hitsSelf){
+        alive = false;
+        setTimeout(resetGame, 700);
+        return;
+      }
+      snake.unshift({x:nx, y:ny});
+      if (nx === food.x && ny === food.y){ placeFood(); }
+      else { snake.pop(); }
+    }
+    function draw(){
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      for (let x = 0; x < GRID_COLS; x++){
+        for (let y = 0; y < GRID_ROWS; y++){
+          ctx.fillRect(x*CELL+CELL/2-1, y*CELL+CELL/2-1, 2, 2);
+        }
+      }
+      ctx.fillStyle = '#ff3b3b';
+      const fx = food.x*CELL + CELL/2, fy = food.y*CELL + CELL/2;
+      ctx.beginPath();
+      ctx.arc(fx, fy, CELL*0.28, 0, Math.PI*2);
+      ctx.fill();
+      snake.forEach((s, i) => {
+        const t = i / snake.length;
+        ctx.fillStyle = i === 0 ? '#4ade80' : `rgba(74,222,128,${0.85 - t*0.55})`;
+        const pad = 1.5;
+        ctx.beginPath();
+        ctx.roundRect
+          ? ctx.roundRect(s.x*CELL+pad, s.y*CELL+pad, CELL-pad*2, CELL-pad*2, 3)
+          : ctx.rect(s.x*CELL+pad, s.y*CELL+pad, CELL-pad*2, CELL-pad*2);
+        ctx.fill();
+      });
+    }
+    function loop(){ step(); draw(); setTimeout(loop, TICK_MS); }
+    resetGame();
+    loop();
+  })();
+
+  /* ==============================================================
+     AMBIENT SPACESHIP SHOOTER — self-playing, purely decorative
+     ============================================================== */
+  (function initShooter(){
+    const canvas = document.getElementById('shooterCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const W = canvas.width, H = canvas.height;
+    const SHIP_W = 22, SHIP_H = 16;
+    const FALL_SPEED = 0.55;
+    const SHIP_SPEED = 2.2;
+    const FIRE_MS = 550;
+    const SPAWN_MS = 900;
+
+    let ship, bullets, enemies, stars, lastFire, lastSpawn;
+
+    function randomStars(){
+      const arr = [];
+      for (let i = 0; i < 40; i++){
+        arr.push({ x: Math.random()*W, y: Math.random()*H, r: Math.random()*1.4+0.3 });
+      }
+      return arr;
+    }
+    function spawnEnemy(){
+      const w = 18 + Math.random()*10;
+      enemies.push({ x: Math.random() * (W - w), y: -14, w, h: 14, hue: Math.random() < 0.5 ? '#ff7b72' : '#ff9d5c' });
+    }
+    function resetGame(){
+      ship = { x: W/2 - SHIP_W/2, y: H - SHIP_H - 8, target: W/2 - SHIP_W/2 };
+      bullets = []; enemies = []; stars = randomStars();
+      lastFire = 0; lastSpawn = 0;
+      spawnEnemy();
+    }
+    function pickTarget(){
+      if (!enemies.length) return null;
+      return enemies.reduce((best, e) => (e.y > best.y) ? e : best, enemies[0]);
+    }
+    function update(now){
+      const target = pickTarget();
+      if (target) ship.target = target.x + target.w/2 - SHIP_W/2;
+      if (ship.x < ship.target) ship.x = Math.min(ship.x + SHIP_SPEED, ship.target);
+      else if (ship.x > ship.target) ship.x = Math.max(ship.x - SHIP_SPEED, ship.target);
+      ship.x = Math.max(0, Math.min(W - SHIP_W, ship.x));
+
+      if (now - lastFire > FIRE_MS){
+        bullets.push({ x: ship.x + SHIP_W/2 - 1.5, y: ship.y - 4 });
+        lastFire = now;
+      }
+      if (now - lastSpawn > SPAWN_MS){ spawnEnemy(); lastSpawn = now; }
+
+      bullets.forEach(b => b.y -= 5);
+      bullets = bullets.filter(b => b.y > -10);
+      enemies.forEach(e => e.y += FALL_SPEED);
+      enemies = enemies.filter(e => e.y < H + 20);
+      if (enemies.length === 0) spawnEnemy();
+
+      for (let i = enemies.length - 1; i >= 0; i--){
+        const e = enemies[i];
+        for (let j = bullets.length - 1; j >= 0; j--){
+          const b = bullets[j];
+          if (b.x > e.x && b.x < e.x + e.w && b.y > e.y && b.y < e.y + e.h){
+            enemies.splice(i, 1);
+            bullets.splice(j, 1);
+            break;
+          }
+        }
+      }
+    }
+    function draw(){
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      stars.forEach(s => {
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1;
+      enemies.forEach(e => { ctx.fillStyle = e.hue; ctx.fillRect(e.x, e.y, e.w, e.h); });
+      ctx.fillStyle = '#7ee787';
+      bullets.forEach(b => ctx.fillRect(b.x, b.y, 3, 8));
+      ctx.fillStyle = '#79c0ff';
+      ctx.beginPath();
+      ctx.moveTo(ship.x + SHIP_W/2, ship.y);
+      ctx.lineTo(ship.x, ship.y + SHIP_H);
+      ctx.lineTo(ship.x + SHIP_W, ship.y + SHIP_H);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,157,92,0.8)';
+      ctx.fillRect(ship.x + SHIP_W/2 - 2, ship.y + SHIP_H, 4, 4);
+    }
+    function loop(now){ update(now || 0); draw(); requestAnimationFrame(loop); }
+    resetGame();
+    requestAnimationFrame(loop);
+  })();
+
+  /* ==============================================================
+     COPY-CODE BUTTON
+     ============================================================== */
+  (function initCopyButtons(){
+    document.querySelectorAll('#projectsGrid .card .copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.card');
+        const lines = card.querySelectorAll('.code ol li');
+        const codeText = Array.from(lines).map(li => li.textContent.replace(/\u00A0/g, ' ')).join('\n');
+        navigator.clipboard.writeText(codeText).then(() => {
+          const label = btn.querySelector('span');
+          const original = label.textContent;
+          btn.classList.add('copied');
+          label.textContent = 'Copied!';
+          setTimeout(() => { btn.classList.remove('copied'); label.textContent = original; }, 1500);
+        }).catch(() => {});
+      });
+    });
+  })();
+
+  /* ==============================================================
+     LINKS SECTION — LIVE PREVIEW
+     ============================================================== */
+  (function initLinkPreviews(){
+    document.querySelectorAll('.link-preview').forEach(preview => {
+      const url = preview.getAttribute('data-preview-url') || preview.getAttribute('href');
+      if (!url || url === '#') return;
+      const iframe = preview.querySelector('iframe');
+      if (iframe) iframe.src = url;
+      preview.classList.add('has-preview');
+    });
+  })();
+
+</script>
+
+<!-- React lanyard-badge widget — built from the lanyard-badge project via
+     `npm run build:widget`. Put lanyard-badge.js and lanyard-badge.css in
+     this same folder as this index.html. -->
+<link rel="stylesheet" href="lanyard-badge.css">
+<script src="lanyard-badge.js" defer></script>
+
+<!-- React profile-card-badge widget — built from the profile-card-widget
+     project via `npm run build:widget`. Put profile-card-badge.js and
+     profile-card-badge.css in this same folder as this index.html. -->
+<link rel="stylesheet" href="profile-card-badge.css">
+<script src="profile-card-badge.js" defer></script>
+
+<!-- React darkveil-badge widget — built from the darkveil-widget project
+     via `npm run build:widget`. Put darkveil-badge.js and
+     darkveil-badge.css in this same folder as this index.html. -->
+<link rel="stylesheet" href="darkveil-badge.css">
+<script src="darkveil-badge.js" defer></script>
+
+<!-- React driftwall-badge widget — built from the driftwall-widget project
+     via `npm run build:widget`. Put driftwall-badge.js and
+     driftwall-badge.css in this same folder as this index.html. -->
+<link rel="stylesheet" href="driftwall-badge.css">
+<script src="driftwall-badge.js" defer></script>
+
+<style>
+  /* Fit the React Bits Profile Card into the hero sidebar column, and tone
+     down its holographic hover glare so the photo stays visible underneath.
+     zoom scales the WHOLE card (text, icons, spacing) together, so nothing
+     overlaps the way it would if we resized just the outer box. */
+  [data-profile-card-badge]{ display:flex; justify-content:center; }
+  [data-profile-card-badge] .pc-card-wrapper{ max-width:360px; width:100%; zoom:0.9; margin:0 auto; }
+
+  /* Force the avatar photo to fill and crop cleanly no matter its original
+     size/aspect ratio, instead of showing at its raw (often zoomed-in and
+     off-center) natural dimensions. */
+  [data-profile-card-badge] .pc-avatar-content .avatar{
+    height:100% !important;
+    object-fit:cover !important;
+    object-position:center 20% !important;
+  }
+
+  [data-profile-card-badge] .pc-shine{ opacity:.55 !important; }
+  [data-profile-card-badge] .pc-shine::before,
+  [data-profile-card-badge] .pc-shine::after{ opacity:.4 !important; }
+  [data-profile-card-badge] .pc-glare{ opacity:.35 !important; }
+
+  /* Remove the soft blurred glow the component renders behind the card —
+     it shows up as a faint rectangular halo/box around the card edges. */
+  [data-profile-card-badge] .pc-behind{ display:none !important; }
+</style>
+
+</body>
+</html>
