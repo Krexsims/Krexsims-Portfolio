@@ -481,6 +481,126 @@
   .snake-card canvas{ display:block; width:100%; height:auto; background:#0d0f15; }
   .games-row{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 
+  /* ============================================================
+     PLAYABLE GAMES — click an idle card to open a pygame-style window
+     ============================================================ */
+  .snake-card.playable{
+    cursor:pointer;
+    transition:border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .snake-card.playable:hover,
+  .snake-card.playable:focus-visible{
+    border-color:var(--accent);
+    transform:translateY(-2px);
+    box-shadow:0 18px 40px var(--accent-soft);
+    outline:none;
+  }
+  .game-stage{ position:relative; }
+  /* play sign: hidden until the card is hovered (or keyboard-focused) */
+  .play-overlay{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(5,6,10,.55);
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .2s ease;
+  }
+  .play-icon{
+    width:52px; height:52px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color:#0b0d12;
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    box-shadow:0 10px 26px var(--accent-soft);
+    transform:scale(.8);
+    transition:transform .2s ease;
+  }
+  .play-icon svg{ width:20px; height:20px; margin-left:3px; }
+  .snake-card.playable:hover .play-overlay,
+  .snake-card.playable:focus-visible .play-overlay{ opacity:1; }
+  .snake-card.playable:hover .play-icon,
+  .snake-card.playable:focus-visible .play-icon{ transform:scale(1); }
+  @media (hover:none){                 /* touch screens can't hover, so keep a faint sign there */
+    .play-overlay{ opacity:1; background:rgba(5,6,10,.25); }
+    .play-icon{ transform:scale(.8); opacity:.9; }
+  }
+
+  .game-modal{
+    position:fixed; inset:0; z-index:1000;
+    background:rgba(5,6,10,.9);
+    display:flex;
+    padding:20px;
+    overflow-y:auto;
+    opacity:0; visibility:hidden;
+    transition:opacity .25s ease, visibility 0s linear .25s;
+  }
+  .game-modal.show{
+    opacity:1; visibility:visible;
+    transition:opacity .25s ease, visibility 0s linear 0s;
+  }
+  .game-window{
+    width:min(100%, 520px);
+    margin:auto;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 70px var(--accent-soft);
+    transform:scale(.94);
+    transition:transform .3s cubic-bezier(.22,1,.36,1);
+    outline:none;
+  }
+  .game-modal.show .game-window{ transform:scale(1); }
+  .game-window .card-head{ padding:10px 14px; }
+  .game-window .filename{ font-size:12px; font-family:'Fira Code', Consolas, 'Courier New', monospace; }
+  .game-close{
+    margin-left:auto;
+    width:30px; height:30px; border-radius:50%;
+    border:1px solid var(--line); background:var(--panel); color:var(--text);
+    font-size:14px; line-height:1; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .2s ease;
+  }
+  .game-close:hover, .game-close:focus-visible{ border-color:var(--accent); outline:none; }
+  .game-stage-wrap{ padding:14px; background:#0d0f15; display:flex; justify-content:center; }
+  #gameCanvas{
+    display:block;
+    width:100%; max-width:480px; height:auto;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#0b0d12;
+    touch-action:none;
+  }
+  .game-foot{
+    display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 14px;
+    padding:10px 14px;
+    border-top:1px solid var(--line);
+    font-family:'Fira Code', Consolas, 'Courier New', monospace;
+    font-size:11px; color:var(--muted);
+  }
+  .game-prompt b{ color:var(--str); }
+  .game-dpad{ display:none; }
+  @media (hover:none) and (pointer:coarse){
+    .game-dpad{
+      display:grid;
+      grid-template-columns:repeat(3, 58px);
+      grid-template-areas:". up ." "left down right";
+      gap:8px; justify-content:center;
+      padding:4px 0 14px; background:#0d0f15;
+    }
+    .game-dpad button{
+      width:58px; height:58px; border-radius:14px;
+      border:1px solid var(--line); background:var(--panel-2); color:var(--text);
+      font-size:20px; touch-action:none; user-select:none; -webkit-user-select:none;
+    }
+    .game-dpad button:active{ border-color:var(--accent); background:var(--accent-soft); }
+    .game-window[data-game="shooter"] .game-dpad [data-dir="up"],
+    .game-window[data-game="shooter"] .game-dpad [data-dir="down"]{ display:none; }
+    .game-dpad [data-dir="up"]{ grid-area:up; }
+    .game-dpad [data-dir="left"]{ grid-area:left; }
+    .game-dpad [data-dir="down"]{ grid-area:down; }
+    .game-dpad [data-dir="right"]{ grid-area:right; }
+  }
+
   @media (max-width:980px){
     .hero-grid{ grid-template-columns:1fr; }
     .hero{ padding-top:130px; text-align:left; }
@@ -1143,7 +1263,7 @@
 
                 <!-- IDLE GAME CARDS — snake + spaceship, unchanged logic from the original site -->
                 <div class="games-row">
-                  <div class="snake-card">
+                  <div class="snake-card playable" data-game="snake" role="button" tabindex="0" aria-label="Play Snake: opens a game window controlled with the arrow keys">
                     <div class="card-head">
                       <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
                       <div class="filename">
@@ -1151,9 +1271,9 @@
                         idle_snake.js
                       </div>
                     </div>
-                    <canvas id="snakeCanvas" width="252" height="182"></canvas>
+                    <div class="game-stage"><canvas id="snakeCanvas" width="252" height="182"></canvas><span class="play-overlay" aria-hidden="true"><span class="play-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></span></span></div>
                   </div>
-                  <div class="snake-card">
+                  <div class="snake-card playable" data-game="shooter" role="button" tabindex="0" aria-label="Play Space Shooter: opens a game window controlled with the arrow keys">
                     <div class="card-head">
                       <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
                       <div class="filename">
@@ -1161,7 +1281,7 @@
                         idle_shooter.js
                       </div>
                     </div>
-                    <canvas id="shooterCanvas" width="252" height="182"></canvas>
+                    <div class="game-stage"><canvas id="shooterCanvas" width="252" height="182"></canvas><span class="play-overlay" aria-hidden="true"><span class="play-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"/></svg></span></span></div>
                   </div>
                 </div>
               </div>
@@ -1306,7 +1426,7 @@
               Photobooth
             </div>
           </div>
-          <a class="link-preview" href="https://krexsims.github.io/Photobooth/" target="_blank" rel="noopener" data-preview-url="">
+          <a class="link-preview" href="https://krexsims.github.io/SnapMe/" target="_blank" rel="noopener" data-preview-url="">
             <iframe loading="lazy" title="Photobooth site preview" tabindex="-1"></iframe>
             <div class="link-preview-fallback">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20Z"/></svg>
@@ -1451,7 +1571,7 @@
   </section>
 
   <footer>
-    Built by <b>Krex Simsiman</b> with HTML, CSS &amp; JavaScript · Nabunturan, Davao de Oro, PH
+    Built by <b>Krex Simsiman</b> · Code with Me!!! · Krexsims Portfolio
   </footer>
 
 </main>
@@ -1464,6 +1584,31 @@
   <button class="modal-close" id="photoModalClose" aria-label="Close">✕</button>
   <div class="photo-modal-card">
     <img id="photoModalImg" src="" alt="">
+  </div>
+</div>
+
+<!-- Playable games — opened from the snake / shooter cards in the About section -->
+<div class="game-modal" id="gameModal" aria-hidden="true">
+  <div class="game-window" id="gameWindow" role="dialog" aria-modal="true" aria-label="Playable game" tabindex="-1">
+    <div class="card-head">
+      <div class="dots"><span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span></div>
+      <div class="filename">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/></svg>
+        <span id="gameFilename">snake.py</span>
+      </div>
+      <button type="button" class="game-close" id="gameClose" aria-label="Close game">✕</button>
+    </div>
+    <div class="game-stage-wrap"><canvas id="gameCanvas" width="480" height="390"></canvas></div>
+    <div class="game-dpad" id="gameDpad">
+      <button type="button" data-dir="up" aria-label="Up">▲</button>
+      <button type="button" data-dir="left" aria-label="Left">◀</button>
+      <button type="button" data-dir="down" aria-label="Down">▼</button>
+      <button type="button" data-dir="right" aria-label="Right">▶</button>
+    </div>
+    <div class="game-foot">
+      <span class="game-prompt"><b>$</b> <span id="gamePrompt">python snake.py</span></span>
+      <span id="gameHelp">← ↑ ↓ → move · Esc close</span>
+    </div>
   </div>
 </div>
 
@@ -1595,7 +1740,7 @@
     const legend    = document.getElementById('ghContribLegend');
     if (!grid) return;
 
-    // Each letter is a 5-row x 3-col dot pattern ('1' = lit cell).
+    // Each letter is a 5-row dot pattern ('1' = lit cell), 3 columns wide (M and N are 5).
     const FONT = {
       H: ['101','101','111','101','101'],
       I: ['111','010','010','010','111'],
@@ -1606,11 +1751,16 @@
       L: ['100','100','100','100','111'],
       O: ['111','101','101','101','111'],
       V: ['101','101','101','010','010'],
-      E: ['111','100','111','100','111']
+      E: ['111','100','111','100','111'],
+      G: ['111','100','101','101','111'],
+      A: ['010','101','111','101','101'],
+      D: ['110','101','101','101','110'],
+      N: ['10001','11001','10101','10011','10001'],   // 5 wide so it doesn't read as an H
+      M: ['10001','11011','10101','10001','10001']    // 5 wide
     };
     // Fixed order: a normal work week, then each message in turn, then
     // back to the work week (see the cycle() loop near the bottom).
-    const MESSAGES = ['HI CRUSH', 'I LOVE U'];
+    const MESSAGES = ['HI CRUSH', 'GANDA MO', 'I LOVE U'];
     const WEEKS = 53;                 // same as a real GitHub year
     // GitHub dark-theme green ramp: level 0 (empty) -> level 4 (busiest)
     const LEVELS = ['var(--line)', '#0e4429', '#006d32', '#26a641', '#39d353'];
@@ -1716,7 +1866,7 @@
       const words = message.split(' ').map(w => w.split('').filter(ch => FONT[ch]));
       let totalCols = 0;
       words.forEach((letters, wi) => {
-        totalCols += letters.length * 3 + Math.max(0, letters.length - 1);
+        totalCols += letters.reduce((sum, ch) => sum + FONT[ch][0].length, 0) + Math.max(0, letters.length - 1);
         if (wi < words.length - 1) totalCols += 2;
       });
       const colStart = Math.max(0, Math.floor((WEEKS - totalCols) / 2));
@@ -1725,7 +1875,7 @@
       words.forEach((letters, wi) => {
         letters.forEach((letter, li) => {
           const pattern = FONT[letter];
-          for (let c = 0; c < 3; c++) {
+          for (let c = 0; c < pattern[0].length; c++) {
             for (let r = 0; r < 5; r++) {
               if (pattern[r][c] === '1') lit.add(col + ',' + (r + 1));
             }
@@ -1747,18 +1897,17 @@
       return sweepIn(targets, 1800);
     }
 
-    // ---- fixed loop: work week -> HI CRUSH -> I LOVE U -> work week ... ----
+    // ---- fixed loop: work week -> HI CRUSH -> GANDA MO -> I LOVE U -> work week ... ----
     const HOLD = 2600;      // how long each message stays visible before the next
     const WORK_HOLD = 6000; // how long the work week stays visible before the first message
+    function showMessage(i) {
+      if (i >= MESSAGES.length) { cycle(); return; }      // last message done: back to the work week
+      const t = revealMessage(MESSAGES[i]);
+      setTimeout(() => showMessage(i + 1), t + HOLD);
+    }
     function cycle() {
       const t0 = showWorkWeek();
-      setTimeout(() => {
-        const t1 = revealMessage(MESSAGES[0]);
-        setTimeout(() => {
-          const t2 = revealMessage(MESSAGES[1]);
-          setTimeout(cycle, t2 + HOLD);
-        }, t1 + HOLD);
-      }, t0 + WORK_HOLD);
+      setTimeout(() => showMessage(0), t0 + WORK_HOLD);
     }
 
     buildGrid();
@@ -2227,6 +2376,532 @@
     function loop(now){ update(now || 0); draw(); requestAnimationFrame(loop); }
     resetGame();
     requestAnimationFrame(loop);
+  })();
+
+  /* ==============================================================
+     PLAYABLE GAMES — click the snake or shooter card (About > Skill
+     Stack panel) to open a pygame-style window. Arrow keys play both.
+     ============================================================== */
+  (function initPlayableGames(){
+    const modal    = document.getElementById('gameModal');
+    const gameWin  = document.getElementById('gameWindow');
+    const canvas   = document.getElementById('gameCanvas');
+    const closeBtn = document.getElementById('gameClose');
+    const fileEl   = document.getElementById('gameFilename');
+    const promptEl = document.getElementById('gamePrompt');
+    const helpEl   = document.getElementById('gameHelp');
+    const dpad     = document.getElementById('gameDpad');
+    const cards    = document.querySelectorAll('[data-game]');
+    if (!modal || !gameWin || !canvas || !cards.length) return;
+
+    const ctx = canvas.getContext('2d');
+    const W = 480, H = 390, HUD = 30;            // canvas size and HUD strip height
+    const FIELD_Y = HUD, FIELD_H = H - HUD;      // playfield is 480 x 360
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+    const FONT = '"Fira Code", Consolas, "Courier New", monospace';
+    const C = { bg:'#0b0d12', hud:'#10131a', line:'#242938', text:'#e7e9ee', muted:'#8a90a2',
+                green:'#4ade80', red:'#ff3b3b', blue:'#79c0ff', orange:'#ff9d5c', coral:'#ff7b72' };
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    /* best scores survive page reloads (silently skipped if storage is blocked) */
+    const best = { snake:0, shooter:0 };
+    try {
+      best.snake   = +localStorage.getItem('krexsims.best.snake')   || 0;
+      best.shooter = +localStorage.getItem('krexsims.best.shooter') || 0;
+    } catch(e){}
+    function saveBest(name){
+      try { localStorage.setItem('krexsims.best.' + name, String(best[name])); } catch(e){}
+    }
+
+    let clock = 0;   // timestamp of the current frame (ms)
+
+    /* ---------- shared drawing helpers ---------- */
+    function rr(x, y, w, h, r){
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+    }
+    function drawHud(left, mid, right){
+      ctx.fillStyle = C.hud;  ctx.fillRect(0, 0, W, HUD);
+      ctx.fillStyle = C.line; ctx.fillRect(0, HUD - 1, W, 1);
+      ctx.font = `bold 13px ${FONT}`;
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = C.text;  ctx.textAlign = 'left';
+      ctx.fillText(left, 12, HUD / 2);
+      if (mid){   ctx.fillStyle = C.muted; ctx.textAlign = 'center'; ctx.fillText(mid, W / 2, HUD / 2); }
+      if (right){ ctx.fillStyle = C.muted; ctx.textAlign = 'right';  ctx.fillText(right, W - 12, HUD / 2); }
+    }
+    function drawOverlay(title, color, lines){
+      const cy = FIELD_Y + FIELD_H / 2;
+      const n = lines.length;
+      const top = cy - (62 + (n - 2) * 12), h = 118 + (n - 2) * 24;   // panel grows with the text
+      ctx.fillStyle = 'rgba(11,13,18,0.7)';
+      ctx.fillRect(0, FIELD_Y, W, FIELD_H);
+      ctx.fillStyle = C.hud; ctx.strokeStyle = C.line; ctx.lineWidth = 1;   // solid panel so nothing shows through the text
+      rr(W / 2 - 215, top, 430, h, 10); ctx.fill(); ctx.stroke();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = color; ctx.font = `bold 30px ${FONT}`;
+      ctx.fillText(title, W / 2, top + 32);
+      ctx.font = `13px ${FONT}`;
+      lines.forEach((t, i) => {
+        const last = i === n - 1;
+        ctx.globalAlpha = (last && Math.floor(clock / 450) % 2) ? 0.35 : 1;   // blink the "press a key" line
+        ctx.fillStyle = last ? C.text : C.muted;
+        ctx.fillText(t, W / 2, top + 70 + i * 24);
+      });
+      ctx.globalAlpha = 1;
+    }
+    function drawBanner(text, t, color){                 // small pill at the top of the field, fades out
+      if (t <= 0) return;
+      ctx.save();
+      ctx.globalAlpha = clamp(t / 500, 0, 1);
+      ctx.font = `bold 12px ${FONT}`;
+      const w = ctx.measureText(text).width + 32;
+      ctx.fillStyle = 'rgba(11,13,18,0.9)'; ctx.strokeStyle = color; ctx.lineWidth = 1;
+      rr(W / 2 - w / 2, FIELD_Y + 10, w, 26, 13); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(text, W / 2, FIELD_Y + 23);
+      ctx.restore();
+    }
+    function inField(fn){
+      ctx.save();
+      ctx.translate(0, FIELD_Y);
+      ctx.beginPath(); ctx.rect(0, 0, W, FIELD_H); ctx.clip();
+      fn();
+      ctx.restore();
+    }
+
+    /* ==========================  SNAKE  ========================== */
+    function makeSnake(){
+      const CELL = 20, COLS = W / CELL, ROWS = FIELD_H / CELL;   // 24 x 18 grid
+      const DIRS = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
+      const DIR_LIST = [DIRS.up, DIRS.down, DIRS.left, DIRS.right];
+      const LEVEL_SCORE = 100;                          // every 100 points = next level = one more red snake
+      const RED_LEN = 4, RED_MS = 210, RED_GHOST_MS = 1400;
+      let snake, dir, queue, food, score, acc, stepMs, state, overAt, won, cause;
+      let level, reds, redAcc, bannerT;
+
+      const wrapX = x => (x + COLS) % COLS;
+      const wrapY = y => (y + ROWS) % ROWS;
+      const wrapDist = (a, b) => {
+        const dx = Math.abs(a.x - b.x), dy = Math.abs(a.y - b.y);
+        return Math.min(dx, COLS - dx) + Math.min(dy, ROWS - dy);
+      };
+      const onPlayer = (x, y) => snake.some(s => s.x === x && s.y === y);
+      /* deadlyOnly: ignore red snakes that are still fading in (they can't hurt you yet) */
+      const onRed = (x, y, deadlyOnly) =>
+        reds.some(r => (!deadlyOnly || r.ghost <= 0) && r.body.some(c => c.x === x && c.y === y));
+
+      function placeFood(){
+        const free = [];
+        for (let x = 0; x < COLS; x++)
+          for (let y = 0; y < ROWS; y++)
+            if (!onPlayer(x, y) && !onRed(x, y, false)) free.push({ x, y });
+        if (!free.length){ food = null; return false; }
+        food = free[Math.floor(Math.random() * free.length)];
+        return true;
+      }
+      function reset(){
+        const sx = Math.floor(COLS / 3), sy = Math.floor(ROWS / 2);
+        snake = [ {x:sx, y:sy}, {x:sx-1, y:sy}, {x:sx-2, y:sy} ];
+        dir = DIRS.right; queue = []; score = 0; acc = 0; stepMs = 130; won = false; cause = '';
+        level = 1; reds = []; redAcc = 0; bannerT = 0;
+        state = 'ready';
+        placeFood();
+      }
+      function finish(why){
+        state = 'over'; overAt = clock; cause = why || '';
+        if (score > best.snake){ best.snake = score; saveBest('snake'); }
+      }
+
+      /* ----- red snakes: wander around, kill you on touch ----- */
+      function spawnRed(){
+        const head = snake[0];
+        for (let attempt = 0; attempt < 300; attempt++){
+          const minDist = attempt < 200 ? 8 : 4;         // appear away from your head (relaxed if the board is crowded)
+          const d = DIR_LIST[Math.floor(Math.random() * 4)];
+          const hx = Math.floor(Math.random() * COLS), hy = Math.floor(Math.random() * ROWS);
+          const body = [];
+          for (let i = 0; i < RED_LEN; i++) body.push({ x: wrapX(hx - d.x * i), y: wrapY(hy - d.y * i) });
+          const ok = body.every(c => !onPlayer(c.x, c.y) && !onRed(c.x, c.y, false)
+                                     && !(food && c.x === food.x && c.y === food.y)
+                                     && wrapDist(c, head) >= minDist);
+          if (ok){ reds.push({ body, dir: d, ghost: RED_GHOST_MS }); return true; }
+        }
+        return false;
+      }
+      function moveRed(r){
+        const head = r.body[0];
+        const free = DIR_LIST.filter(d => {
+          if (d.x === -r.dir.x && d.y === -r.dir.y) return false;                 // never reverse
+          const x = wrapX(head.x + d.x), y = wrapY(head.y + d.y);
+          return !onPlayer(x, y) && !onRed(x, y, false);                          // steer around you, itself and other reds
+        });
+        if (!free.length) return;                                                 // boxed in: wait a tick
+        let d = free.find(f => f.x === r.dir.x && f.y === r.dir.y);
+        if (!d || Math.random() < 0.25) d = free[Math.floor(Math.random() * free.length)];
+        r.dir = d;
+        r.body.unshift({ x: wrapX(head.x + d.x), y: wrapY(head.y + d.y) });
+        r.body.pop();
+      }
+
+      function queueDir(d){
+        const last = queue.length ? queue[queue.length - 1] : dir;
+        if (d.x === -last.x && d.y === -last.y) return;   // no 180-degree turns
+        if (d.x === last.x && d.y === last.y) return;     // already heading that way
+        if (queue.length < 2) queue.push(d);              // small buffer so quick turns aren't lost
+      }
+      function press(name){
+        const d = DIRS[name];
+        if (state === 'over'){
+          if (clock - overAt > 400){ reset(); state = 'playing'; queueDir(d); }
+          return;
+        }
+        if (state === 'ready') state = 'playing';
+        queueDir(d);
+      }
+      function action(){ if (state === 'over' && clock - overAt > 400) reset(); }
+      function step(){
+        if (queue.length) dir = queue.shift();
+        const head = snake[0];
+        const nx = wrapX(head.x + dir.x);   // the edges wrap around: leave one side, come out the other
+        const ny = wrapY(head.y + dir.y);
+        const eat = !!food && nx === food.x && ny === food.y;
+        const body = eat ? snake : snake.slice(0, -1);   // the tail moves out of the way unless we grow
+        if (body.some(s => s.x === nx && s.y === ny)){ finish('self'); return; }
+        if (onRed(nx, ny, true)){ finish('red'); return; }                          // touched a red snake
+        snake.unshift({ x:nx, y:ny });
+        if (eat){
+          score += 10;
+          stepMs = Math.max(65, stepMs - 3);             // gets faster as you eat
+          const lv = 1 + Math.floor(score / LEVEL_SCORE);
+          if (lv > level){ level = lv; spawnRed(); bannerT = 2200; }                // every 100 points: one more red snake
+          if (!placeFood()){ won = true; finish('win'); }
+        } else {
+          snake.pop();
+        }
+      }
+      function update(dt){
+        if (state !== 'playing') return;
+        if (bannerT > 0) bannerT -= dt;
+        reds.forEach(r => {
+          if (r.ghost > 0){
+            r.ghost -= dt;
+            if (r.ghost <= 0 && r.body.some(c => onPlayer(c.x, c.y))) r.ghost = 150;   // don't switch on while you're sitting on it
+          }
+        });
+        acc += dt;
+        while (acc >= stepMs && state === 'playing'){ acc -= stepMs; step(); }
+        if (state !== 'playing') return;
+        redAcc += dt;
+        while (redAcc >= RED_MS){ redAcc -= RED_MS; reds.forEach(r => { if (r.ghost <= 0) moveRed(r); }); }
+      }
+      function drawRed(r){
+        const a = r.ghost > 0 ? (Math.floor(clock / 130) % 2 ? 0.55 : 0.2) : 1;   // blinks while it's still appearing
+        ctx.globalAlpha = a;
+        r.body.forEach((c, i) => {
+          const t = i / r.body.length;
+          ctx.fillStyle = i === 0 ? '#ff6b6b' : `rgba(220,38,38,${0.95 - t * 0.35})`;
+          rr(c.x * CELL + 1.5, c.y * CELL + 1.5, CELL - 3, CELL - 3, 4);
+          ctx.fill();
+        });
+        const h = r.body[0], d = r.dir, cx = h.x * CELL + CELL / 2, cy = h.y * CELL + CELL / 2;
+        ctx.fillStyle = '#fff';                                                    // eyes, so the head is obvious
+        [-1, 1].forEach(k => {
+          ctx.beginPath();
+          ctx.arc(cx + d.x * 3 - d.y * 3.5 * k, cy + d.y * 3 + d.x * 3.5 * k, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+      }
+      function draw(){
+        inField(() => {
+          ctx.fillStyle = 'rgba(255,255,255,0.05)';
+          for (let x = 0; x < COLS; x++)
+            for (let y = 0; y < ROWS; y++)
+              ctx.fillRect(x * CELL + CELL / 2 - 1, y * CELL + CELL / 2 - 1, 2, 2);
+          if (food){
+            ctx.fillStyle = C.red;
+            ctx.beginPath();
+            ctx.arc(food.x * CELL + CELL / 2, food.y * CELL + CELL / 2, CELL * 0.32, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          reds.forEach(drawRed);
+          snake.forEach((s, i) => {
+            const t = i / snake.length;
+            ctx.fillStyle = i === 0 ? C.green : `rgba(74,222,128,${0.9 - t * 0.5})`;
+            rr(s.x * CELL + 1.5, s.y * CELL + 1.5, CELL - 3, CELL - 3, 4);
+            ctx.fill();
+          });
+        });
+        drawHud(`Score: ${score}`, `Level ${level}`, `Best: ${Math.max(best.snake, score)}`);
+        if (state === 'playing') drawBanner(`LEVEL ${level} · A RED SNAKE APPEARS!`, bannerT, '#ff8080');
+        if (state === 'ready')
+          drawOverlay('SNAKE', C.green, ['Eat the red dots. The edges wrap around.', 'Every 100 points a red snake appears.',
+                                          "Don't touch it, and don't hit yourself!", 'Press an arrow key to start']);
+        else if (state === 'over'){
+          const why = won ? null : (cause === 'red' ? 'You touched a red snake!' : 'You ran into yourself!');
+          drawOverlay(won ? 'YOU WIN!' : 'GAME OVER', won ? C.green : C.red,
+                      [`Score: ${score}   Best: ${best.snake}`, ...(why ? [why] : []), 'Press an arrow key to play again']);
+        }
+      }
+      reset();
+      return { file:'snake.py', cmd:'python snake.py', help:'← ↑ ↓ → steer · Esc close',
+               reset, press, release(){}, releaseAll(){}, action, update, draw };
+    }
+
+    /* =======================  SPACE SHOOTER  ======================= */
+    function makeShooter(){
+      const SHIP_W = 26, SHIP_H = 20, SPEED = 260, FIRE_MS = 230, BULLET_V = 460;
+      const START_LIVES = 3, FLASH_MS = 350;
+      const LEVEL_SCORE = 100, BASE_FALL = 60, FALL_STEP = 18, MAX_FALL = 200;   // +18 px/s per level, capped
+      let ship, keys, bullets, enemies, particles, stars, score, lives, state, overAt, fireT, spawnT, flashT, level, bannerT;
+
+      function newKeys(){ return { left:false, right:false }; }
+      function reset(){
+        ship = { x: W / 2, y: FIELD_H - SHIP_H - 10 };   // x = centre; y stays fixed at the bottom (field coordinates)
+        keys = newKeys();
+        bullets = []; enemies = []; particles = [];
+        score = 0; lives = START_LIVES;
+        fireT = FIRE_MS; spawnT = 0; flashT = 0; level = 1; bannerT = 0;
+        stars = Array.from({ length:50 }, () => ({
+          x: Math.random() * W, y: Math.random() * FIELD_H, r: Math.random() * 1.3 + 0.3, v: 12 + Math.random() * 40
+        }));
+        state = 'ready';
+      }
+      function finish(){
+        state = 'over'; overAt = clock;
+        if (score > best.shooter){ best.shooter = score; saveBest('shooter'); }
+      }
+      function loseLife(){
+        lives--; flashT = FLASH_MS;
+        if (lives <= 0) finish();
+      }
+      function press(name){
+        if (state === 'over'){
+          if (clock - overAt > 400){ reset(); state = 'playing'; if (name in keys) keys[name] = true; }
+          return;
+        }
+        if (state === 'ready') state = 'playing';
+        if (name in keys) keys[name] = true;             // up / down do nothing: the ship only moves sideways
+      }
+      function release(name){ if (keys && name in keys) keys[name] = false; }
+      function releaseAll(){ keys = newKeys(); }
+      function action(){ if (state === 'over' && clock - overAt > 400) reset(); }
+
+      function spawnEnemy(){
+        const w = 26 + Math.random() * 10, h = 18;
+        enemies.push({
+          x: 4 + Math.random() * (W - w - 8), y: -h, w, h,
+          vx: (Math.random() - 0.5) * 50,
+          color: Math.random() < 0.5 ? C.coral : C.orange
+        });
+      }
+      function boom(e){
+        for (let i = 0; i < 10; i++){
+          const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 110;
+          const life = 350 + Math.random() * 350;
+          particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+                           life, max: life, color: e.color });
+        }
+      }
+      function update(dt){
+        const sec = dt / 1000;
+        stars.forEach(s => { s.y += s.v * sec; if (s.y > FIELD_H){ s.y = 0; s.x = Math.random() * W; } });
+        particles.forEach(p => { p.x += p.vx * sec; p.y += p.vy * sec; p.life -= dt; });
+        particles = particles.filter(p => p.life > 0);
+        if (flashT > 0) flashT -= dt;
+        if (bannerT > 0) bannerT -= dt;
+        if (state !== 'playing') return;
+
+        /* every 100 points the level goes up, and the boxes fall faster */
+        const lv = 1 + Math.floor(score / LEVEL_SCORE);
+        if (lv > level){ level = lv; bannerT = 2200; }
+
+        /* the ship slides left / right only */
+        const dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+        ship.x = clamp(ship.x + dx * SPEED * sec, SHIP_W / 2, W - SHIP_W / 2);
+
+        /* auto-fire, so both hands can stay on the arrow keys */
+        fireT += dt;
+        if (fireT >= FIRE_MS){ fireT = 0; bullets.push({ x: ship.x - 1.5, y: ship.y - 6 }); }
+
+        /* boxes get denser and faster as the score climbs */
+        spawnT += dt;
+        if (spawnT >= Math.max(400, 1100 - score * 1.2)){ spawnT = 0; spawnEnemy(); }
+        const fall = Math.min(MAX_FALL, BASE_FALL + (level - 1) * FALL_STEP);
+
+        bullets.forEach(b => { b.y -= BULLET_V * sec; });
+        bullets = bullets.filter(b => b.y > -12);
+        enemies.forEach(e => {
+          e.y += fall * sec; e.x += e.vx * sec;
+          if (e.x < 0 || e.x + e.w > W){ e.vx *= -1; e.x = clamp(e.x, 0, W - e.w); }
+        });
+
+        for (let i = enemies.length - 1; i >= 0; i--){
+          const e = enemies[i];
+          let killed = false;
+          for (let j = bullets.length - 1; j >= 0; j--){
+            const b = bullets[j];
+            if (b.x + 3 > e.x && b.x < e.x + e.w && b.y + 10 > e.y && b.y < e.y + e.h){
+              bullets.splice(j, 1); killed = true; break;
+            }
+          }
+          if (killed){ score += 10; boom(e); enemies.splice(i, 1); continue; }
+
+          /* a box that reaches the ship or slips past the bottom costs a life */
+          const sx = ship.x - SHIP_W / 2 + 3, sy = ship.y + 3, sw = SHIP_W - 6, sh = SHIP_H - 6;
+          const hitShip = sx < e.x + e.w && sx + sw > e.x && sy < e.y + e.h && sy + sh > e.y;
+          if (hitShip || e.y + e.h >= FIELD_H){
+            enemies.splice(i, 1); boom(e);
+            loseLife();
+            if (state === 'over') return;
+          }
+        }
+      }
+      function draw(){
+        inField(() => {
+          ctx.fillStyle = 'rgba(255,255,255,0.5)';
+          stars.forEach(s => {
+            ctx.globalAlpha = 0.25 + s.r * 0.2;
+            ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+          });
+          ctx.globalAlpha = 1;
+          enemies.forEach(e => {
+            ctx.fillStyle = e.color; ctx.fillRect(e.x, e.y, e.w, e.h);
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillRect(e.x + 5, e.y + 5, 4, 4); ctx.fillRect(e.x + e.w - 9, e.y + 5, 4, 4);
+          });
+          ctx.fillStyle = '#7ee787';
+          bullets.forEach(b => ctx.fillRect(b.x, b.y, 3, 10));
+          particles.forEach(p => {
+            ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
+            ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 3, 3);
+          });
+          ctx.globalAlpha = 1;
+          if (state !== 'over'){
+            ctx.fillStyle = C.blue;
+            ctx.beginPath();
+            ctx.moveTo(ship.x, ship.y);
+            ctx.lineTo(ship.x - SHIP_W / 2, ship.y + SHIP_H);
+            ctx.lineTo(ship.x + SHIP_W / 2, ship.y + SHIP_H);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = 'rgba(255,157,92,0.85)';
+            ctx.fillRect(ship.x - 2, ship.y + SHIP_H, 4, 3 + Math.random() * 3);
+          }
+          if (flashT > 0){                                 // quick red flash when a life is lost
+            ctx.fillStyle = `rgba(255,59,59,${0.28 * clamp(flashT / FLASH_MS, 0, 1)})`;
+            ctx.fillRect(0, 0, W, FIELD_H);
+          }
+        });
+        drawHud(`Score: ${score}`, `Level ${level} · Best: ${Math.max(best.shooter, score)}`, null);
+        if (state === 'playing') drawBanner(`LEVEL ${level} · BOXES FALL FASTER!`, bannerT, C.blue);
+        ctx.fillStyle = C.blue;                          // remaining lives, drawn as little ships
+        for (let i = 0; i < lives; i++){
+          const lx = W - 20 - i * 20, ly = HUD / 2 - 6;
+          ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx - 7, ly + 12); ctx.lineTo(lx + 7, ly + 12); ctx.closePath(); ctx.fill();
+        }
+        if (state === 'ready')
+          drawOverlay('SPACE SHOOTER', C.blue, ['Slide with the left and right arrow keys.', "Your ship fires by itself. Don't let boxes past!",
+                                              'Every 100 points the boxes fall faster.', 'Press an arrow key to start']);
+        else if (state === 'over')
+          drawOverlay('GAME OVER', C.red, [`Score: ${score}   Best: ${best.shooter}`, 'Press an arrow key to play again']);
+      }
+      reset();
+      return { file:'space_shooter.py', cmd:'python space_shooter.py', help:'← → move · auto-fire · Esc close',
+               reset, press, release, releaseAll, action, update, draw };
+    }
+
+    const games = { snake: makeSnake(), shooter: makeShooter() };
+    const labels = { snake:'Snake', shooter:'Space Shooter' };
+
+    /* ---------- window + game loop ---------- */
+    let current = null, rafId = 0, lastTs = 0, lastFocus = null;
+
+    function frame(ts){
+      rafId = requestAnimationFrame(frame);
+      const dt = clamp(ts - lastTs, 0, 50);   // clamp so a background tab doesn't cause a huge jump
+      lastTs = ts; clock = ts;
+      current.update(dt);
+      ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+      current.draw();
+    }
+    function open(name, fromEl){
+      if (current) return;
+      current = games[name];
+      current.reset();
+      fileEl.textContent = current.file;
+      promptEl.textContent = current.cmd;
+      helpEl.textContent = current.help;
+      gameWin.setAttribute('aria-label', 'Play ' + labels[name]);
+      gameWin.dataset.game = name;
+      lastFocus = fromEl || null;
+      lastTs = performance.now(); clock = lastTs;
+      modal.classList.add('show');
+      modal.setAttribute('aria-hidden', 'false');
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(frame);
+      gameWin.focus({ preventScroll:true });
+    }
+    function close(){
+      if (!current) return;
+      cancelAnimationFrame(rafId);
+      current.releaseAll();
+      current = null;
+      modal.classList.remove('show');
+      modal.setAttribute('aria-hidden', 'true');
+      if (lastFocus) lastFocus.focus({ preventScroll:true });
+    }
+
+    cards.forEach(card => {
+      card.addEventListener('click', () => open(card.dataset.game, card));
+      card.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(card.dataset.game, card); }
+      });
+    });
+    closeBtn.addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+    /* the games card lives on page 2 of the carousel, so keep it out of the tab order until it's shown */
+    const setCardsTab = v => cards.forEach(c => { c.tabIndex = v; });
+    setCardsTab(-1);
+    const nextBtn = document.getElementById('panelNextBtn');
+    const prevBtn = document.getElementById('panelPrevBtn');
+    if (nextBtn) nextBtn.addEventListener('click', () => setCardsTab(0));
+    if (prevBtn) prevBtn.addEventListener('click', () => setCardsTab(-1));
+
+    /* ---------- keyboard: arrow keys play, Esc closes ---------- */
+    const ARROWS = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right' };
+    document.addEventListener('keydown', e => {
+      if (!current) return;
+      if (e.key === 'Escape'){ close(); return; }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const dir = ARROWS[e.key];
+      if (dir){
+        e.preventDefault();                 // keep the page from scrolling while you play
+        if (!e.repeat) current.press(dir);
+        return;
+      }
+      if ((e.key === 'Enter' || e.key === ' ') && !(e.target.closest && e.target.closest('button'))){
+        e.preventDefault();
+        current.action();                   // Enter / Space returns to the start screen after game over
+      }
+    });
+    document.addEventListener('keyup', e => {
+      if (current && ARROWS[e.key]) current.release(ARROWS[e.key]);
+    });
+    window.addEventListener('blur', () => { if (current) current.releaseAll(); });
+
+    /* ---------- on-screen arrows (only shown on touch devices) ---------- */
+    dpad.querySelectorAll('button[data-dir]').forEach(btn => {
+      const dir = btn.dataset.dir;
+      btn.addEventListener('pointerdown', e => { e.preventDefault(); if (current) current.press(dir); });
+      ['pointerup', 'pointercancel', 'pointerleave'].forEach(t =>
+        btn.addEventListener(t, () => { if (current) current.release(dir); }));
+    });
   })();
 
   /* ==============================================================
