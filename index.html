@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Krexsims Portfolio</title>
+<script>
+  /* Desktop-only: phones and tablets get the "not supported on mobile" notice (see .mobile-warning below).
+     Detected by user agent, iPadOS-in-desktop-mode, or a touch-only device (coarse pointer, no hover, and no
+     mouse/trackpad at all). A normal laptop/PC, even with a touchscreen or a narrow window, is NOT flagged. */
+  (function(){
+    try {
+      var ua = navigator.userAgent || '';
+      var mobileUA = /Android|iPhone|iPad|iPod|Mobile|Windows Phone|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      var iPadDesktopMode = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+      var mm = window.matchMedia ? function (q) { return window.matchMedia(q).matches; } : function () { return false; };
+      var touchFirst = mm('(hover: none) and (pointer: coarse)') && !mm('(any-pointer: fine)');
+      if (mobileUA || iPadDesktopMode || touchFirst) document.documentElement.classList.add('mobile-blocked');
+    } catch (e) {}
+  })();
+</script>
 <style>
 
   /* ============================================================
@@ -992,9 +1007,85 @@
   .to-top.show{ opacity:1; pointer-events:auto; transform:translateY(0); }
   .to-top svg{ width:20px; height:20px; }
 
+  /* ============================================================
+     MOBILE WARNING — full-screen "desktop only" notice on phones / tablets
+     (hidden everywhere else; switched on by the script at the top of <head>)
+     ============================================================ */
+  .mobile-warning{
+    display:none;
+    position:fixed; inset:0; z-index:2000;
+    padding:24px;
+    overflow-y:auto;
+    background:radial-gradient(900px 500px at 15% -10%, #2a0f16 0%, transparent 60%),
+               radial-gradient(800px 500px at 100% 0%, #1a0d10 0%, transparent 55%),
+               var(--bg);
+  }
+  html.mobile-blocked .mobile-warning{ display:flex; }
+  html.mobile-blocked, html.mobile-blocked body{ overflow:hidden; height:100%; }
+  .mobile-warning-card{
+    width:min(100%, 420px);
+    margin:auto;
+    text-align:center;
+    padding:32px 26px 28px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:20px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6), 0 0 70px var(--accent-soft);
+  }
+  .mobile-warning-icon{
+    width:72px; height:72px; margin:0 auto 18px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color:#0b0d12;
+    background:linear-gradient(120deg, var(--accent), var(--accent2), var(--key));
+    box-shadow:0 12px 30px var(--accent-soft);
+  }
+  .mobile-warning-icon svg{ width:34px; height:34px; }
+  .mobile-warning-tag{
+    display:inline-block; margin-bottom:12px;
+    padding:5px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel-2);
+    color:var(--key); font-size:11px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase;
+  }
+  .mobile-warning-card h1{ margin:0 0 10px; font-size:22px; line-height:1.3; }
+  .mobile-warning-card p{ margin:0; color:var(--muted); font-size:15px; line-height:1.6; }
+  .mobile-warning-card p b{ color:var(--text); }
+  .mobile-warning-devices{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+    margin-top:20px;
+  }
+  .mobile-warning-devices span{
+    padding:6px 12px; border-radius:999px;
+    border:1px solid var(--line); background:var(--panel-2);
+    font-size:12px; font-weight:700;
+  }
+  .mobile-warning-devices .ok{ color:var(--str); }
+  .mobile-warning-devices .no{ color:#ff7b72; }
+
 </style>
 </head>
 <body>
+
+<!-- ================================================================
+     MOBILE WARNING — only shown on phones / tablets (the script at the
+     top of <head> adds the "mobile-blocked" class). Edit the text here.
+     ================================================================ -->
+<div class="mobile-warning" id="mobileWarning" role="alertdialog" aria-modal="true" aria-labelledby="mobileWarningTitle">
+  <div class="mobile-warning-card">
+    <div class="mobile-warning-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8 20.5h8M12 16.5v4"/></svg>
+    </div>
+    <span class="mobile-warning-tag">Desktop only</span>
+    <h1 id="mobileWarningTitle">Mobile version not supported</h1>
+    <p>This portfolio doesn't work on mobile devices. Please open it on a <b>laptop, PC or desktop</b> computer to see everything properly.</p>
+    <div class="mobile-warning-devices">
+      <span class="ok">✓ Laptop</span>
+      <span class="ok">✓ PC</span>
+      <span class="ok">✓ Desktop</span>
+      <span class="no">✕ Phone / Tablet</span>
+    </div>
+  </div>
+</div>
 
 <!-- ================================================================
      DARK VEIL — animated WebGL background, sits behind everything
@@ -2479,7 +2570,7 @@
       const CELL = 20, COLS = W / CELL, ROWS = FIELD_H / CELL;   // 24 x 18 grid
       const DIRS = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
       const DIR_LIST = [DIRS.up, DIRS.down, DIRS.left, DIRS.right];
-      const LEVEL_SCORE = 100;                          // every 100 points = next level = one more red snake
+      const LEVEL_SCORE = 500;                          // every 500 points = next level = one more red snake (the first at 500)
       const RED_LEN = 4, RED_MS = 210, RED_GHOST_MS = 1400;
       let snake, dir, queue, food, score, acc, stepMs, state, overAt, won, cause;
       let level, reds, redAcc, bannerT;
@@ -2640,7 +2731,7 @@
         drawHud(`Score: ${score}`, `Level ${level}`, `Best: ${Math.max(best.snake, score)}`);
         if (state === 'playing') drawBanner(`LEVEL ${level} · A RED SNAKE APPEARS!`, bannerT, '#ff8080');
         if (state === 'ready')
-          drawOverlay('SNAKE', C.green, ['Eat the red dots. The edges wrap around.', 'Every 100 points a red snake appears.',
+          drawOverlay('SNAKE', C.green, ['Eat the red dots. The edges wrap around.', 'Every 500 points a red snake appears.',
                                           "Don't touch it, and don't hit yourself!", 'Press an arrow key to start']);
         else if (state === 'over'){
           const why = won ? null : (cause === 'red' ? 'You touched a red snake!' : 'You ran into yourself!');
@@ -2657,28 +2748,38 @@
     function makeShooter(){
       const SHIP_W = 26, SHIP_H = 20, SPEED = 260, FIRE_MS = 230, BULLET_V = 460;
       const START_LIVES = 3, MAX_LIVES = 5, FLASH_MS = 350;
-      const LEVEL_SCORE = 100, BASE_FALL = 60, FALL_STEP = 18, MAX_FALL = 200;   // +18 px/s per level, capped
-      const MAX_BEAMS = 5, BEAM_GAP = 9;         // blue orb = +1 beam, fired side by side (up to 5)
-      const ORB_V = 75, ORB_R = 8;               // orbs drift down slowly; fly into one to collect it
-      const HARD_SCORE = 500;                    // from 500 points: tough boxes + gunships that shoot back
-      const TOUGH_HP = 3, TOUGH_CHANCE = 0.2;    // purple/orange box: 3 hits, ~1 in 5 spawns
+      const LEVEL_SCORE = 100, BASE_FALL = 60, FALL_STEP = 18, MAX_FALL = 200;   // boxes: +18 px/s per level, capped
+      /* weapon (blue orbs): power 1 = one beam ... 5 = five beams fanned out, 6 = rockets + double beam damage */
+      const MAX_POWER = 6, SPREAD = 0.19;                 // radians between neighbouring beams (about 11 degrees)
+      const ROCKET_MS = 1200, ROCKET_DMG = 3, SPLASH_DMG = 2, ROCKET_R = 46;
+      const SHIELD_MS = 6000;                             // shield orb: immune for 6 seconds
+      const ORB_V = 75, ORB_R = 8;                        // orbs drift down slowly; fly into one to collect it
+      const HARD_SCORE = 500, EYE_SCORE = 1000, BOSS_SCORE = 2000;
+      const TOUGH_HP = 3, TOUGH_CHANCE = 0.2;             // purple/orange box: 3 hits, ~1 in 5 spawns
       const GUNSHIP_HP = 2, MAX_GUNSHIPS = 3, FOE_SHOT_V = 190;
+      const EYE_HP = 5, EYE_VX = 75;                      // alien eyeball: 5 hits, chases you sideways
+      const BOSS_HP = 200, BOSS_Y = 98, BOSS_BOUNTY = 500;
       const rnd = (a, b) => a + Math.random() * (b - a);
 
-      let ship, keys, bullets, enemies, particles, stars, score, lives, state, overAt, fireT, spawnT, flashT;
+      let ship, keys, bullets, rockets, enemies, gunships, eyes, foeShots, particles, blasts, pops, stars, orbs;
+      let score, lives, state, overAt, fireT, rocketT, spawnT, foeT, eyeT, flashT;
       let level, bannerT, bannerText, bannerColor;
-      let beams, orbs, blueT, greenT, pops, hard, gunships, foeShots, foeT;
+      let power, shieldT, blueT, greenT, shieldOrbT, hard, eyeMode;
+      let boss, laser, nextBossScore, bossesDefeated, warnT, pauseT;
 
       function newKeys(){ return { left:false, right:false }; }
       function reset(){
         ship = { x: W / 2, y: FIELD_H - SHIP_H - 10 };   // x = centre; y stays fixed at the bottom (field coordinates)
         keys = newKeys();
-        bullets = []; enemies = []; particles = []; pops = [];
+        bullets = []; rockets = []; enemies = []; gunships = []; eyes = []; foeShots = [];
+        particles = []; blasts = []; pops = []; orbs = [];
         score = 0; lives = START_LIVES;
-        fireT = FIRE_MS; spawnT = 0; flashT = 0; level = 1; bannerT = 0; bannerText = ''; bannerColor = C.blue;
-        beams = 1; orbs = [];
-        blueT = rnd(8000, 12000); greenT = rnd(18000, 26000);      // first orbs show up after a little while
-        hard = false; gunships = []; foeShots = []; foeT = 0;
+        fireT = FIRE_MS; rocketT = 0; spawnT = 0; foeT = 0; eyeT = 0; flashT = 0;
+        level = 1; bannerT = 0; bannerText = ''; bannerColor = C.blue;
+        power = 1; shieldT = 0;
+        blueT = rnd(8000, 12000); greenT = rnd(18000, 26000); shieldOrbT = rnd(14000, 22000);   // first orbs after a little while
+        hard = false; eyeMode = false;
+        boss = null; laser = null; nextBossScore = BOSS_SCORE; bossesDefeated = 0; warnT = 0; pauseT = 0;
         stars = Array.from({ length:50 }, () => ({
           x: Math.random() * W, y: Math.random() * FIELD_H, r: Math.random() * 1.3 + 0.3, v: 12 + Math.random() * 40
         }));
@@ -2687,10 +2788,6 @@
       function finish(){
         state = 'over'; overAt = clock;
         if (score > best.shooter){ best.shooter = score; saveBest('shooter'); }
-      }
-      function loseLife(){
-        lives--; flashT = FLASH_MS;
-        if (lives <= 0) finish();
       }
       function press(name){
         if (state === 'over'){
@@ -2704,17 +2801,41 @@
       function releaseAll(){ keys = newKeys(); }
       function action(){ if (state === 'over' && clock - overAt > 400) reset(); }
 
+      /* ----- small helpers ----- */
+      const shipRect = () => ({ x: ship.x - SHIP_W / 2 + 3, y: ship.y + 3, w: SHIP_W - 6, h: SHIP_H - 6 });   // forgiving hit box
+      const overlap = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      const bossRect = () => ({ x: boss.x - 76, y: boss.y - 24, w: 152, h: 54 });
+      const rectOf = t => t === boss ? bossRect() : (t.r ? { x: t.x - t.r, y: t.y - t.r, w: t.r * 2, h: t.r * 2 } : t);
+      const bulletHits = (b, r) => b.x + 2 > r.x && b.x - 2 < r.x + r.w && b.y + 6 > r.y && b.y - 6 < r.y + r.h;
+      function distToRect(px, py, r){
+        const dx = Math.max(r.x - px, 0, px - (r.x + r.w)), dy = Math.max(r.y - py, 0, py - (r.y + r.h));
+        return Math.hypot(dx, dy);
+      }
+      function allTargets(){
+        const list = enemies.concat(gunships, eyes);
+        if (boss && !boss.dying) list.push(boss);
+        return list.filter(t => t.hp > 0);
+      }
+      const colorOf = t => t === boss ? '#a855f7' : (t.r ? '#a3e635' : (t.tough ? C.orange : (t.color || '#ff4d6d')));
+      function hurtTarget(t, dmg){ t.hp -= dmg; t.flash = 70; }
+      function hurtPlayer(x, y){                            // false if the shield soaked it up
+        if (shieldT > 0){ sparks(x, y, '#22d3ee'); return false; }
+        lives--; flashT = FLASH_MS;
+        if (lives <= 0) finish();
+        return true;
+      }
+
       /* ----- things that spawn ----- */
-      function spawnEnemy(){                              // the ordinary one-hit box
+      function spawnEnemy(x, y, mul){                       // the ordinary one-hit box
         const w = 26 + Math.random() * 10, h = 18;
         enemies.push({
-          x: 4 + Math.random() * (W - w - 8), y: -h, w, h,
+          x: x === undefined ? 4 + Math.random() * (W - w - 8) : x, y: y === undefined ? -h : y, w, h,
           vx: (Math.random() - 0.5) * 50,
-          hp: 1, maxHp: 1, pts: 10, speedMul: 1, flash: 0, tough: false,
+          hp: 1, maxHp: 1, pts: 10, speedMul: mul || 1, flash: 0, tough: false,
           color: Math.random() < 0.5 ? C.coral : C.orange
         });
       }
-      function spawnTough(){                              // purple + orange box: takes 3 hits
+      function spawnTough(){                                // purple + orange box: takes 3 hits
         const w = 34, h = 24;
         enemies.push({
           x: 4 + Math.random() * (W - w - 8), y: -h, w, h,
@@ -2723,7 +2844,7 @@
           color: '#a855f7'
         });
       }
-      function spawnGunship(){                            // flies in, hovers near the top and shoots at you
+      function spawnGunship(){                              // flies in, hovers near the top and shoots at you
         const w = 32, h = 22;
         gunships.push({
           x: 20 + Math.random() * (W - w - 40), y: -h, w, h,
@@ -2731,34 +2852,142 @@
           hp: GUNSHIP_HP, maxHp: GUNSHIP_HP, hoverY: rnd(44, 96), fireT: rnd(700, 1300), flash: 0
         });
       }
+      function spawnEye(){                                  // alien eyeball: drifts down and follows you
+        eyes.push({ x: rnd(30, W - 30), y: -18, r: 15, hp: EYE_HP, maxHp: EYE_HP, flash: 0, cd: 0, t: rnd(0, 6), seed: rnd(0, 3200) });
+      }
       function spawnOrb(type){ orbs.push({ x: rnd(ORB_R + 6, W - ORB_R - 6), y: -ORB_R, type }); }
 
       /* ----- little effects ----- */
-      function pop(x, y, text, color){ pops.push({ x, y, text, color, life: 900 }); }
+      function pop(x, y, text, color){ pops.push({ x, y, text, color, life: 1100 }); }
+      function burst(x, y, color, n){
+        for (let i = 0; i < (n || 10); i++){
+          const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 110, life = 350 + Math.random() * 350;
+          particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life, max: life, color });
+        }
+      }
       function boom(e){
-        for (let i = 0; i < 10; i++){
-          const a = Math.random() * Math.PI * 2, sp = 40 + Math.random() * 110;
-          const life = 350 + Math.random() * 350;
-          const color = e.tough ? (Math.random() < 0.5 ? '#a855f7' : C.orange) : e.color;
-          particles.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life, max: life, color });
-        }
+        const r = rectOf(e);
+        if (e.tough){ burst(r.x + r.w / 2, r.y + r.h / 2, '#a855f7', 6); burst(r.x + r.w / 2, r.y + r.h / 2, C.orange, 6); }
+        else burst(r.x + r.w / 2, r.y + r.h / 2, colorOf(e), e.r ? 18 : 10);
       }
-      function sparks(x, y, color){                       // small burst when something takes a hit but survives
-        for (let i = 0; i < 4; i++){
-          const a = Math.random() * Math.PI * 2, sp = 30 + Math.random() * 70;
-          particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 250, max: 250, color });
-        }
-      }
+      function sparks(x, y, color){ burst(x, y, color, 4); }
       function pickup(o){
+        const y0 = ship.y - 6;
         if (o.type === 'beam'){
-          if (beams < MAX_BEAMS){ beams++; pop(o.x, ship.y - 6, '+1 BEAM', '#60a5fa'); }
-          else { score += 25; pop(o.x, ship.y - 6, '+25', '#60a5fa'); }               // already maxed: bonus points instead
+          if (power < MAX_POWER){
+            power++;
+            pop(o.x, y0, power === MAX_POWER ? 'ROCKETS + DAMAGE UP!' : '+1 BEAM', '#60a5fa');
+          } else { score += 25; pop(o.x, y0, '+25', '#60a5fa'); }                    // already maxed: bonus points instead
+        } else if (o.type === 'life'){
+          if (lives < MAX_LIVES){ lives++; pop(o.x, y0, '+1 LIFE', C.green); }
+          else { score += 25; pop(o.x, y0, '+25', C.green); }
         } else {
-          if (lives < MAX_LIVES){ lives++; pop(o.x, ship.y - 6, '+1 LIFE', C.green); }
-          else { score += 25; pop(o.x, ship.y - 6, '+25', C.green); }
+          shieldT = SHIELD_MS; pop(o.x, y0, 'SHIELD 6s', '#22d3ee');                  // grabbing another one refills it
         }
       }
 
+      /* ----- weapons ----- */
+      function fireBeams(){                                 // 1 beam straight; 3 = left / middle / right; up to 5 fanned out
+        const n = Math.min(power, 5), dmg = power >= MAX_POWER ? 2 : 1;
+        for (let i = 0; i < n; i++){
+          const a = (i - (n - 1) / 2) * SPREAD;
+          bullets.push({ x: ship.x, y: ship.y - 6, vx: Math.sin(a) * BULLET_V, vy: -Math.cos(a) * BULLET_V, a, dmg });
+        }
+      }
+      function fireRockets(){
+        [-9, 9].forEach(off => rockets.push({ x: ship.x + off, y: ship.y - 2, vx: off * 3, vy: -150 }));
+      }
+      function explodeRocket(x, y, primary){
+        blasts.push({ x, y, life: 380, max: 380 });
+        burst(x, y, C.orange, 12); burst(x, y, '#fde047', 6);
+        allTargets().forEach(t => {
+          if (distToRect(x, y, rectOf(t)) <= ROCKET_R) hurtTarget(t, t === primary ? ROCKET_DMG : SPLASH_DMG);   // splash hurts neighbours too
+        });
+      }
+
+      /* ----- boss: the mothership ----- */
+      const PATTERNS = { 1:['spread', 'aimed', 'aimed'], 2:['spread', 'aimed', 'laser', 'minions'], 3:['spread', 'laser', 'aimed', 'minions', 'laser'] };
+      function startBoss(){
+        [].concat(enemies, gunships, eyes).forEach(boom);                // clear the field: everything blows up (no points, no penalty)
+        enemies = []; gunships = []; eyes = []; foeShots = []; laser = null;
+        const maxHp = BOSS_HP + 80 * bossesDefeated;                    // each new mothership is tougher
+        boss = { x: W / 2, y: -70, hp: maxHp, maxHp, sweep: 0, attackT: 2600, idx: 0, flash: 0, phase: 1, dying: false, dyingT: 0 };
+        warnT = 2800;
+      }
+      function bossAttack(phase){
+        const kind = PATTERNS[phase][boss.idx++ % PATTERNS[phase].length];
+        const ox = boss.x, oy = boss.y + 24;
+        if (kind === 'spread'){                                          // a fan of slow shots
+          const n = phase === 3 ? 7 : 5;
+          for (let i = 0; i < n; i++){
+            const a = (i - (n - 1) / 2) * 0.31;
+            foeShots.push({ x: ox - 2.5, y: oy, w: 5, h: 5, vx: Math.sin(a) * 150, vy: Math.cos(a) * 150, big: true });
+          }
+        } else if (kind === 'aimed'){                                    // fast shots straight at you
+          (phase === 1 ? [ox] : [ox - 42, ox + 42]).forEach(fx => {
+            const dx = ship.x - fx, dy = ship.y - oy, len = Math.hypot(dx, dy) || 1;
+            foeShots.push({ x: fx - 2.5, y: oy, w: 5, h: 5, vx: dx / len * 210, vy: dy / len * 210, big: true });
+          });
+        } else if (kind === 'laser'){                                    // warning line, then a beam you must slide out of
+          if (!laser) laser = { x: boss.x, t: 0, state: 'warn', hit: false };
+        } else {                                                         // 'minions': drops two boxes from its wings
+          [-1, 1].forEach(s => spawnEnemy(ox + s * 52 - 15, boss.y + 22, 0.7));
+        }
+      }
+      function updateBoss(dt, sec){
+        const b = boss;
+        if (b.dying){
+          b.dyingT -= dt; b.y += 5 * sec;
+          if (Math.random() < dt / 60) burst(b.x + rnd(-70, 70), b.y + rnd(-14, 22), Math.random() < 0.5 ? C.orange : '#a855f7', 8);
+          if (b.dyingT <= 0) finishBoss();
+          return;
+        }
+        if (b.y < BOSS_Y){ b.y = Math.min(BOSS_Y, b.y + 60 * sec); return; }   // it flies in first
+        const ratio = b.hp / b.maxHp, phase = ratio > 0.66 ? 1 : (ratio > 0.33 ? 2 : 3);
+        if (phase !== b.phase){
+          b.phase = phase; bannerT = 2200;
+          bannerText = phase === 2 ? 'MOTHERSHIP: PHASE 2' : 'MOTHERSHIP IS ENRAGED!';
+          bannerColor = phase === 2 ? C.orange : '#ff5d73';
+        }
+        if (laser){                                                      // charging the laser: stops sweeping and lines up over you
+          if (laser.state === 'warn' && laser.t < 650) b.x = clamp(b.x + clamp(ship.x - b.x, -150 * sec, 150 * sec), 60, W - 60);
+        } else {
+          b.sweep += sec * [0, 0.7, 0.95, 1.25][phase];                  // sweeps side to side, faster when hurt
+          b.x = W / 2 + Math.sin(b.sweep) * (W / 2 - 96);
+        }
+        b.attackT -= dt;
+        if (b.attackT <= 0){ b.attackT = [0, 1800, 1500, 1150][phase]; bossAttack(phase); }
+      }
+      function updateLaser(dt, sec, R){
+        if (!boss){ laser = null; return; }
+        laser.t += dt;
+        laser.x = boss.x;                                                // the beam always comes straight down from the mothership
+        if (laser.state === 'warn'){
+          if (laser.t >= 1100){ laser.state = 'fire'; laser.t = 0; }
+        } else {
+          if (!laser.hit && overlap(R, { x: laser.x - 13, y: boss.y + 22, w: 26, h: FIELD_H })){
+            laser.hit = true; hurtPlayer(ship.x, ship.y);
+          }
+          if (laser.t >= 500){
+            laser = null;
+            boss.sweep = Math.asin(clamp((boss.x - W / 2) / (W / 2 - 96), -1, 1));   // pick the sweep up again from where it is (no jump)
+          }
+        }
+      }
+      function finishBoss(){
+        const bounty = BOSS_BOUNTY + 250 * bossesDefeated;
+        burst(boss.x, boss.y, '#fde047', 20); burst(boss.x, boss.y, C.orange, 20); burst(boss.x, boss.y, '#a855f7', 20);
+        blasts.push({ x: boss.x, y: boss.y, life: 500, max: 500 });
+        score += bounty; bossesDefeated++;
+        boss = null; laser = null; foeShots = [];
+        nextBossScore = score + 2000;                                     // the next one comes after another 2000 points
+        pauseT = 3500; spawnT = 0;
+        bannerText = `MOTHERSHIP DESTROYED! +${bounty}`; bannerColor = '#fde047'; bannerT = 3200;
+        if (lives < MAX_LIVES) spawnOrb('life');                          // little thank-you gifts
+        if (power < MAX_POWER) spawnOrb('beam');
+      }
+
+      /* ----- the update step ----- */
       function update(dt){
         const sec = dt / 1000;
         stars.forEach(s => { s.y += s.v * sec; if (s.y > FIELD_H){ s.y = 0; s.x = Math.random() * W; } });
@@ -2766,62 +2995,75 @@
         particles = particles.filter(p => p.life > 0);
         pops.forEach(p => { p.y -= 34 * sec; p.life -= dt; });
         pops = pops.filter(p => p.life > 0);
-        enemies.forEach(e => { if (e.flash > 0) e.flash -= dt; });
-        gunships.forEach(g => { if (g.flash > 0) g.flash -= dt; });
+        blasts.forEach(b => { b.life -= dt; });
+        blasts = blasts.filter(b => b.life > 0);
+        [].concat(enemies, gunships, eyes, boss ? [boss] : []).forEach(t => { if (t.flash > 0) t.flash -= dt; });
         if (flashT > 0) flashT -= dt;
         if (bannerT > 0) bannerT -= dt;
+        if (warnT > 0) warnT -= dt;
         if (state !== 'playing') return;
+        if (shieldT > 0) shieldT -= dt;
+        if (pauseT > 0) pauseT -= dt;
 
-        /* every 100 points the level goes up, and the boxes fall faster */
+        /* score milestones */
         const lv = 1 + Math.floor(score / LEVEL_SCORE);
-        if (lv > level){ level = lv; bannerText = `LEVEL ${level} · BOXES FALL FASTER!`; bannerColor = C.blue; bannerT = 2200; }
-        /* at 500 points the real trouble starts */
+        if (lv > level){                                                  // every 100 points the boxes fall faster (until the cap)
+          const before = Math.min(MAX_FALL, BASE_FALL + (level - 1) * FALL_STEP), after = Math.min(MAX_FALL, BASE_FALL + (lv - 1) * FALL_STEP);
+          level = lv;
+          if (after > before){ bannerText = `LEVEL ${level} · BOXES FALL FASTER!`; bannerColor = C.blue; bannerT = 2200; }
+        }
         if (!hard && score >= HARD_SCORE){
-          hard = true; foeT = 5000;                        // first gunship arrives about 1.5 s later
+          hard = true; foeT = 5000;                                       // first gunship arrives about 1.5 s later
           bannerText = `LEVEL ${level} · ENEMY SHIPS & TOUGH BOXES!`; bannerColor = C.orange; bannerT = 2800;
         }
+        if (!eyeMode && score >= EYE_SCORE){
+          eyeMode = true; eyeT = 6500;                                    // first eyeball about 2.5 s later
+          bannerText = `LEVEL ${level} · ALIEN EYEBALLS HUNT YOU!`; bannerColor = '#a3e635'; bannerT = 2800;
+        }
+        if (!boss && score >= nextBossScore) startBoss();
 
         /* the ship slides left / right only */
         const dx = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
         ship.x = clamp(ship.x + dx * SPEED * sec, SHIP_W / 2, W - SHIP_W / 2);
-        const sx = ship.x - SHIP_W / 2 + 3, sy = ship.y + 3, sw = SHIP_W - 6, sh = SHIP_H - 6;   // forgiving hit box
+        const R = shipRect();
 
-        /* auto-fire: one beam, plus one more for every blue orb collected */
+        /* auto-fire: beams fan out as you collect blue orbs; the 6th upgrade adds rockets and double damage */
         fireT += dt;
-        if (fireT >= FIRE_MS){
-          fireT = 0;
-          for (let i = 0; i < beams; i++){
-            const off = (i - (beams - 1) / 2) * BEAM_GAP;
-            bullets.push({ x: ship.x + off - 1.5, y: ship.y - 6 });
-          }
+        if (fireT >= FIRE_MS){ fireT = 0; fireBeams(); }
+        if (power >= MAX_POWER){
+          rocketT += dt;
+          if (rocketT >= ROCKET_MS){ rocketT = 0; fireRockets(); }
         }
 
         /* orbs fall from the top every so often */
         blueT -= dt;
-        if (blueT <= 0){ blueT = rnd(12000, 18000); if (beams < MAX_BEAMS) spawnOrb('beam'); }
+        if (blueT <= 0){ blueT = rnd(12000, 18000); if (power < MAX_POWER) spawnOrb('beam'); }
         greenT -= dt;
         if (greenT <= 0){ greenT = rnd(24000, 36000); if (lives < MAX_LIVES) spawnOrb('life'); }
+        shieldOrbT -= dt;
+        if (shieldOrbT <= 0){ shieldOrbT = rnd(26000, 40000); if (shieldT <= 0) spawnOrb('shield'); }
 
-        /* boxes get denser as the score climbs; after 500 some are tough ones */
-        spawnT += dt;
-        if (spawnT >= Math.max(550, 1100 - score * 1.2)){
-          spawnT = 0;
-          if (hard && Math.random() < TOUGH_CHANCE) spawnTough(); else spawnEnemy();
+        /* regular enemies (paused during the boss fight and for a moment after it) */
+        if (!boss && pauseT <= 0){
+          spawnT += dt;
+          if (spawnT >= Math.max(550, 1100 - score * 1.2)){
+            spawnT = 0;
+            if (hard && Math.random() < TOUGH_CHANCE) spawnTough(); else spawnEnemy();
+          }
+          if (hard){
+            const maxShips = Math.min(MAX_GUNSHIPS, 1 + Math.floor((score - HARD_SCORE) / 500));
+            if (gunships.length < maxShips){ foeT += dt; if (foeT >= 6500){ foeT = 0; spawnGunship(); } }
+          }
+          if (eyeMode){
+            const maxEyes = Math.min(2, 1 + Math.floor((score - EYE_SCORE) / 500));
+            if (eyes.length < maxEyes){ eyeT += dt; if (eyeT >= 9000){ eyeT = 0; spawnEye(); } }
+          }
         }
         const fall = Math.min(MAX_FALL, BASE_FALL + (level - 1) * FALL_STEP);
 
-        /* enemy gunships: 1 at a time from 500, up to 3 as the score keeps climbing */
-        if (hard){
-          const maxShips = Math.min(MAX_GUNSHIPS, 1 + Math.floor((score - HARD_SCORE) / 500));
-          if (gunships.length < maxShips){
-            foeT += dt;
-            if (foeT >= 6500){ foeT = 0; spawnGunship(); }
-          }
-        }
-
         /* move everything */
-        bullets.forEach(b => { b.y -= BULLET_V * sec; });
-        bullets = bullets.filter(b => b.y > -12);
+        bullets.forEach(b => { b.x += b.vx * sec; b.y += b.vy * sec; });
+        bullets = bullets.filter(b => b.y > -12 && b.x > -12 && b.x < W + 12);
         enemies.forEach(e => {
           e.y += fall * e.speedMul * sec; e.x += e.vx * sec;
           if (e.x < 0 || e.x + e.w > W){ e.vx *= -1; e.x = clamp(e.x, 0, W - e.w); }
@@ -2836,11 +3078,20 @@
             g.fireT = rnd(1300, 2100);
             const bx = g.x + g.w / 2, by = g.y + g.h;
             const t = Math.max(0.2, (ship.y - by) / FOE_SHOT_V);                       // aim at where you are right now
-            foeShots.push({ x: bx - 1.5, y: by, vx: clamp((ship.x - bx) / t, -90, 90) });
+            foeShots.push({ x: bx - 1.5, y: by, w: 3, h: 9, vx: clamp((ship.x - bx) / t, -90, 90), vy: FOE_SHOT_V });
           }
         });
-        foeShots.forEach(b => { b.x += b.vx * sec; b.y += FOE_SHOT_V * sec; });
-        foeShots = foeShots.filter(b => b.y < FIELD_H + 10 && b.x > -10 && b.x < W + 10);
+        eyes.forEach(e => {                                                            // eyeballs: slow drift down, relentless sideways chase
+          e.t += sec;
+          e.x = clamp(e.x + clamp((ship.x - e.x) * 2, -EYE_VX, EYE_VX) * sec + Math.sin(e.t * 3) * 16 * sec, e.r, W - e.r);
+          e.y += (42 + Math.min(40, Math.max(0, score - EYE_SCORE) * 0.02)) * sec;
+          if (e.cd > 0) e.cd -= dt;
+        });
+        foeShots.forEach(b => { b.x += b.vx * sec; b.y += b.vy * sec; });
+        foeShots = foeShots.filter(b => b.y < FIELD_H + 10 && b.y > -20 && b.x > -10 && b.x < W + 10);
+        if (boss) updateBoss(dt, sec);
+        if (laser) updateLaser(dt, sec, R);
+        if (state === 'over') return;
 
         /* orbs: collect on touch, vanish off the bottom */
         for (let i = orbs.length - 1; i >= 0; i--){
@@ -2852,57 +3103,153 @@
           }
         }
 
-        /* enemy shots hitting you */
+        /* enemy shots hitting you (the shield just soaks them up) */
         for (let i = foeShots.length - 1; i >= 0; i--){
           const b = foeShots[i];
-          if (sx < b.x + 3 && sx + sw > b.x && sy < b.y + 9 && sy + sh > b.y){
-            foeShots.splice(i, 1); sparks(b.x, b.y, '#ff5d73');
-            loseLife();
+          if (overlap(R, b)){
+            foeShots.splice(i, 1);
+            hurtPlayer(b.x, b.y);
             if (state === 'over') return;
           }
         }
 
-        /* your beams vs boxes: ordinary boxes die in 1 hit, tough ones need 3 */
+        /* your beams vs everything: boxes, gunships, eyeballs and the boss all just lose hit points */
+        let targets = allTargets();
+        for (let j = bullets.length - 1; j >= 0; j--){
+          const b = bullets[j];
+          for (const t of targets){
+            if (t.hp > 0 && bulletHits(b, rectOf(t))){
+              bullets.splice(j, 1);
+              hurtTarget(t, b.dmg);
+              if (t.hp > 0) sparks(b.x, b.y, colorOf(t));
+              break;
+            }
+          }
+        }
+
+        /* rockets: home in on the nearest enemy, explode on contact with splash damage */
+        for (let j = rockets.length - 1; j >= 0; j--){
+          const r = rockets[j];
+          let near = null, nd = 1e9;
+          targets.forEach(t => {
+            if (t.hp <= 0) return;
+            const c = rectOf(t), cx = c.x + c.w / 2, cy = c.y + c.h / 2;
+            if (cy > r.y + 8) return;                                                  // only things ahead of it
+            const d = Math.hypot(cx - r.x, cy - r.y);
+            if (d < nd){ nd = d; near = cx; }
+          });
+          if (near !== null) r.vx += (clamp((near - r.x) * 6, -260, 260) - r.vx) * Math.min(1, 9 * sec);
+          r.vy = Math.max(-520, r.vy - 700 * sec);
+          r.x += r.vx * sec; r.y += r.vy * sec;
+          let primary = null;
+          for (const t of targets){
+            if (t.hp <= 0) continue;
+            const c = rectOf(t);
+            if (r.x > c.x - 3 && r.x < c.x + c.w + 3 && r.y > c.y - 4 && r.y < c.y + c.h + 4){ primary = t; break; }
+          }
+          if (primary){ explodeRocket(r.x, r.y, primary); rockets.splice(j, 1); }
+          else if (r.y < -20 || r.x < -20 || r.x > W + 20) rockets.splice(j, 1);
+        }
+
+        /* anything that ran out of hit points blows up and pays out */
+        for (let i = enemies.length - 1; i >= 0; i--)
+          if (enemies[i].hp <= 0){ score += enemies[i].pts; boom(enemies[i]); enemies.splice(i, 1); }
+        for (let i = gunships.length - 1; i >= 0; i--)
+          if (gunships[i].hp <= 0){ score += 50; boom({ x:gunships[i].x, y:gunships[i].y, w:gunships[i].w, h:gunships[i].h, color:'#ff4d6d' }); gunships.splice(i, 1); }
+        for (let i = eyes.length - 1; i >= 0; i--)
+          if (eyes[i].hp <= 0){ score += 100; boom(eyes[i]); eyes.splice(i, 1); }
+        if (boss && !boss.dying && boss.hp <= 0){                                       // the mothership goes down in a chain of explosions
+          boss.dying = true; boss.dyingT = 1900; foeShots = []; laser = null;
+          bannerText = 'MOTHERSHIP DESTROYED!'; bannerColor = '#fde047'; bannerT = 1900;
+        }
+
+        /* a box that reaches the ship or slips past the bottom costs a life (unless you're shielded) */
         for (let i = enemies.length - 1; i >= 0; i--){
           const e = enemies[i];
-          let dead = false;
-          for (let j = bullets.length - 1; j >= 0; j--){
-            const b = bullets[j];
-            if (b.x + 3 > e.x && b.x < e.x + e.w && b.y + 10 > e.y && b.y < e.y + e.h){
-              bullets.splice(j, 1);
-              e.hp--; e.flash = 90;
-              if (e.hp <= 0){ dead = true; break; }
-              sparks(b.x, b.y, e.tough ? C.orange : e.color);
-            }
-          }
-          if (dead){ score += e.pts; boom(e); enemies.splice(i, 1); continue; }
-
-          /* a box that reaches the ship or slips past the bottom costs a life */
-          const hitShip = sx < e.x + e.w && sx + sw > e.x && sy < e.y + e.h && sy + sh > e.y;
-          if (hitShip || e.y + e.h >= FIELD_H){
+          if (overlap(R, e) || e.y + e.h >= FIELD_H){
             enemies.splice(i, 1); boom(e);
-            loseLife();
+            hurtPlayer(e.x + e.w / 2, Math.min(e.y + e.h, ship.y));
             if (state === 'over') return;
           }
         }
 
-        /* your beams vs gunships */
-        for (let i = gunships.length - 1; i >= 0; i--){
-          const g = gunships[i];
-          let dead = false;
-          for (let j = bullets.length - 1; j >= 0; j--){
-            const b = bullets[j];
-            if (b.x + 3 > g.x && b.x < g.x + g.w && b.y + 10 > g.y && b.y < g.y + g.h){
-              bullets.splice(j, 1);
-              g.hp--; g.flash = 90;
-              if (g.hp <= 0){ dead = true; break; }
-              sparks(b.x, b.y, '#ff4d6d');
+        /* eyeballs: touching you costs a life; if you're shielded they get zapped and bounced back instead */
+        for (let i = eyes.length - 1; i >= 0; i--){
+          const e = eyes[i];
+          if (distToRect(e.x, e.y, R) < e.r - 2){
+            if (shieldT > 0){
+              if (e.cd <= 0){ hurtTarget(e, 2); e.cd = 600; e.y -= 55; sparks(e.x, e.y + e.r, '#22d3ee'); }
+            } else {
+              eyes.splice(i, 1); boom(e); hurtPlayer(e.x, e.y);
+              if (state === 'over') return;
             }
+          } else if (e.y - e.r >= FIELD_H){                                              // slipped past: also costs a life
+            eyes.splice(i, 1); hurtPlayer(e.x, FIELD_H - 4);
+            if (state === 'over') return;
           }
-          if (dead){ score += 50; boom({ x:g.x, y:g.y, w:g.w, h:g.h, color:'#ff4d6d' }); gunships.splice(i, 1); }
         }
       }
 
+      /* ----- drawing ----- */
+      function drawEye(e){
+        const fl = e.flash > 0;
+        ctx.strokeStyle = '#b91c1c'; ctx.lineWidth = 2;                                  // wriggling tendrils trailing behind it
+        [-1, 0, 1].forEach(k => {
+          ctx.beginPath();
+          ctx.moveTo(e.x + k * 6, e.y - e.r + 3);
+          ctx.quadraticCurveTo(e.x + k * 9 + Math.sin(e.t * 4 + k) * 5, e.y - e.r - 8, e.x + k * 4 + Math.sin(e.t * 3 + k * 2) * 6, e.y - e.r - 17);
+          ctx.stroke();
+        });
+        ctx.fillStyle = fl ? '#fff' : '#f4f1e8'; ctx.strokeStyle = '#7f1d1d'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = 'rgba(185,28,28,0.55)'; ctx.lineWidth = 1;                     // veins
+        [[-0.9, -0.5], [0.8, -0.7], [-0.7, 0.75], [0.9, 0.5]].forEach(([vx, vy]) => {
+          ctx.beginPath(); ctx.moveTo(e.x + vx * e.r, e.y + vy * e.r); ctx.lineTo(e.x + vx * e.r * 0.55, e.y + vy * e.r * 0.5); ctx.stroke();
+        });
+        const ix = e.x + clamp((ship.x - e.x) / 40, -1, 1) * 4, iy = e.y + 3;              // it stares right at you
+        ctx.fillStyle = '#a3e635'; ctx.beginPath(); ctx.arc(ix, iy, 8, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#4d7c0f'; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(ix, iy, 2.2, 6, 0, 0, Math.PI * 2); ctx.fill();
+        if ((clock + e.seed) % 3200 < 140){                                              // blink
+          ctx.fillStyle = '#3f1d5a'; ctx.beginPath(); ctx.arc(e.x, e.y, e.r - 1, 0, Math.PI * 2); ctx.fill();
+        }
+        if (e.hp < e.maxHp){
+          ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.fillRect(e.x - 12, e.y + e.r + 4, 24, 3);
+          ctx.fillStyle = '#a3e635'; ctx.fillRect(e.x - 12, e.y + e.r + 4, 24 * e.hp / e.maxHp, 3);
+        }
+      }
+      function drawBoss(){
+        const b = boss, cx = b.x, cy = b.y, fl = b.flash > 0, enraged = b.phase === 3;
+        if (b.dying && Math.floor(clock / 70) % 2) ctx.globalAlpha = 0.55;
+        ctx.globalAlpha *= 0.28; ctx.fillStyle = enraged ? '#ff3b3b' : '#a855f7';       // glow
+        ctx.beginPath(); ctx.ellipse(cx, cy + 6, 96, 32, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = b.dying && Math.floor(clock / 70) % 2 ? 0.55 : 1;
+        ctx.fillStyle = '#4b3a7a';                                                       // gun barrels under the hull
+        ctx.fillRect(cx - 50, cy + 18, 8, 12); ctx.fillRect(cx + 42, cy + 18, 8, 12); ctx.fillRect(cx - 4, cy + 20, 8, 12);
+        ctx.fillStyle = fl ? '#fff' : '#2a1f45'; ctx.strokeStyle = enraged ? '#ff5d73' : '#a855f7'; ctx.lineWidth = 2;   // hull
+        ctx.beginPath(); ctx.ellipse(cx, cy + 6, 78, 20, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        for (let k = -3; k <= 3; k++){                                                   // blinking rim lights
+          ctx.fillStyle = (Math.floor(clock / 220) + k) % 2 ? C.orange : '#a855f7';
+          ctx.fillRect(cx + k * 22 - 2, cy + 6, 4, 4);
+        }
+        ctx.fillStyle = fl ? '#fff' : 'rgba(168,85,247,0.5)';                             // glass dome
+        ctx.beginPath(); ctx.arc(cx, cy, 25, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = enraged ? '#ff3b3b' : C.orange;                                  // glowing core
+        ctx.beginPath(); ctx.arc(cx, cy - 6, 6 + Math.sin(clock / 150) * 1.6, 0, Math.PI * 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      function drawBossBar(){
+        const w = 340, x = (W - w) / 2, y = FIELD_Y + 50, h = 10, ratio = clamp(boss.hp / boss.maxHp, 0, 1);
+        ctx.fillStyle = 'rgba(11,13,18,0.88)'; rr(x - 6, y - 18, w + 12, h + 24, 6); ctx.fill();
+        ctx.font = `bold 10px ${FONT}`; ctx.textBaseline = 'middle';
+        ctx.fillStyle = C.muted; ctx.textAlign = 'left'; ctx.fillText('MOTHERSHIP', x, y - 8);
+        ctx.textAlign = 'right'; ctx.fillText(`${Math.ceil(ratio * 100)}%`, x + w, y - 8);
+        ctx.fillStyle = '#242938'; ctx.fillRect(x, y, w, h);
+        ctx.fillStyle = ratio > 0.66 ? C.green : (ratio > 0.33 ? C.orange : C.red);
+        ctx.fillRect(x, y, w * ratio, h);
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';                                               // phase markers
+        ctx.fillRect(x + w * 0.33 - 1, y, 2, h); ctx.fillRect(x + w * 0.66 - 1, y, 2, h);
+      }
       function draw(){
         inField(() => {
           ctx.fillStyle = 'rgba(255,255,255,0.5)';
@@ -2914,15 +3261,19 @@
 
           /* power-up orbs */
           orbs.forEach(o => {
-            const blue = o.type === 'beam', col = blue ? '#3b82f6' : '#22c55e';
+            const col = o.type === 'beam' ? '#3b82f6' : (o.type === 'life' ? '#22c55e' : '#22d3ee');
             ctx.globalAlpha = 0.22; ctx.fillStyle = col;
             ctx.beginPath(); ctx.arc(o.x, o.y, ORB_R + 5, 0, Math.PI * 2); ctx.fill();     // soft glow
             ctx.globalAlpha = 1; ctx.fillStyle = col;
             ctx.beginPath(); ctx.arc(o.x, o.y, ORB_R, 0, Math.PI * 2); ctx.fill();
-            ctx.strokeStyle = blue ? '#bfdbfe' : '#bbf7d0'; ctx.lineWidth = 1.5; ctx.stroke();
+            ctx.strokeStyle = o.type === 'beam' ? '#bfdbfe' : (o.type === 'life' ? '#bbf7d0' : '#cffafe'); ctx.lineWidth = 1.5; ctx.stroke();
             ctx.fillStyle = '#fff';
-            if (blue){ ctx.fillRect(o.x - 3.5, o.y - 3.5, 2, 7); ctx.fillRect(o.x + 1.5, o.y - 3.5, 2, 7); }   // two little beams
-            else { ctx.fillRect(o.x - 1, o.y - 4, 2, 8); ctx.fillRect(o.x - 4, o.y - 1, 8, 2); }              // plus sign
+            if (o.type === 'beam'){ ctx.fillRect(o.x - 3.5, o.y - 3.5, 2, 7); ctx.fillRect(o.x + 1.5, o.y - 3.5, 2, 7); }   // two little beams
+            else if (o.type === 'life'){ ctx.fillRect(o.x - 1, o.y - 4, 2, 8); ctx.fillRect(o.x - 4, o.y - 1, 8, 2); }     // plus sign
+            else {                                                                                                         // shield icon
+              ctx.beginPath(); ctx.moveTo(o.x - 4, o.y - 4); ctx.lineTo(o.x + 4, o.y - 4); ctx.lineTo(o.x + 4, o.y + 1);
+              ctx.lineTo(o.x, o.y + 5); ctx.lineTo(o.x - 4, o.y + 1); ctx.closePath(); ctx.fill();
+            }
           });
 
           /* boxes */
@@ -2956,16 +3307,55 @@
               ctx.fillStyle = '#ff4d6d'; ctx.fillRect(g.x + 4, g.y - 6, (g.w - 8) * g.hp / g.maxHp, 3);
             }
           });
+          eyes.forEach(drawEye);
+          if (boss) drawBoss();
 
-          ctx.fillStyle = '#7ee787';
-          bullets.forEach(b => ctx.fillRect(b.x, b.y, 3, 10));
-          ctx.fillStyle = '#ff5d73';
-          foeShots.forEach(b => ctx.fillRect(b.x, b.y, 3, 9));
+          /* boss laser: a warning line first, then the beam */
+          if (laser && boss){
+            if (laser.state === 'warn'){
+              ctx.strokeStyle = `rgba(255,59,59,${0.35 + 0.4 * Math.abs(Math.sin(clock / 80))})`; ctx.lineWidth = 2;
+              ctx.setLineDash([6, 6]);
+              ctx.beginPath(); ctx.moveTo(laser.x, boss.y + 22); ctx.lineTo(laser.x, FIELD_H); ctx.stroke();
+              ctx.setLineDash([]);
+              ctx.fillStyle = 'rgba(255,59,59,0.5)'; ctx.fillRect(laser.x - 13, FIELD_H - 6, 26, 3);
+            } else {
+              ctx.fillStyle = 'rgba(255,59,59,0.38)'; ctx.fillRect(laser.x - 15, boss.y + 22, 30, FIELD_H);
+              ctx.fillStyle = '#ffe4e6'; ctx.fillRect(laser.x - 5, boss.y + 22, 10, FIELD_H);
+            }
+          }
+
+          /* your beams (yellow once the damage upgrade is in), rockets and blasts */
+          bullets.forEach(b => {
+            ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a);
+            ctx.fillStyle = b.dmg > 1 ? '#fde047' : '#7ee787';
+            const w = b.dmg > 1 ? 4 : 3;
+            ctx.fillRect(-w / 2, -6, w, 12);
+            ctx.restore();
+          });
+          rockets.forEach(r => {
+            ctx.save(); ctx.translate(r.x, r.y); ctx.rotate(Math.atan2(r.vx, -r.vy));
+            ctx.fillStyle = 'rgba(255,157,92,0.9)'; ctx.fillRect(-1.5, 6, 3, 5 + Math.random() * 6);      // exhaust flame
+            ctx.fillStyle = '#e7e9ee'; ctx.fillRect(-2.5, -6, 5, 12);
+            ctx.fillStyle = '#ff5d73'; ctx.beginPath(); ctx.moveTo(-2.5, -6); ctx.lineTo(2.5, -6); ctx.lineTo(0, -11); ctx.closePath(); ctx.fill();
+            ctx.restore();
+          });
+          blasts.forEach(b => {
+            const t = 1 - b.life / b.max;
+            ctx.globalAlpha = (1 - t) * 0.7;
+            ctx.strokeStyle = '#fde047'; ctx.lineWidth = 3; ctx.fillStyle = 'rgba(255,157,92,0.35)';
+            ctx.beginPath(); ctx.arc(b.x, b.y, ROCKET_R * Math.sqrt(t) + 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          });
+          ctx.globalAlpha = 1;
+          foeShots.forEach(b => {
+            if (b.big){ ctx.fillStyle = C.orange; ctx.beginPath(); ctx.arc(b.x + 2.5, b.y + 2.5, 3.6, 0, Math.PI * 2); ctx.fill(); }
+            else { ctx.fillStyle = '#ff5d73'; ctx.fillRect(b.x, b.y, b.w, b.h); }
+          });
           particles.forEach(p => {
             ctx.globalAlpha = clamp(p.life / p.max, 0, 1);
             ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 3, 3);
           });
           ctx.globalAlpha = 1;
+
           if (state !== 'over'){
             ctx.fillStyle = C.blue;
             ctx.beginPath();
@@ -2975,16 +3365,34 @@
             ctx.closePath(); ctx.fill();
             ctx.fillStyle = 'rgba(255,157,92,0.85)';
             ctx.fillRect(ship.x - 2, ship.y + SHIP_H, 4, 3 + Math.random() * 3);
+            if (shieldT > 0 && !(shieldT < 1500 && Math.floor(shieldT / 120) % 2)){                      // shield bubble (blinks when about to run out)
+              ctx.fillStyle = 'rgba(34,211,238,0.14)'; ctx.strokeStyle = '#22d3ee'; ctx.lineWidth = 2;
+              ctx.beginPath(); ctx.arc(ship.x, ship.y + 11, 21 + Math.sin(clock / 120), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            }
           }
           ctx.font = `bold 12px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          pops.forEach(p => {                                                                                 // "+1 BEAM" / "+1 LIFE"
+          pops.forEach(p => {                                                                                 // "+1 BEAM" / "+1 LIFE" / "SHIELD 6s"
             ctx.globalAlpha = clamp(p.life / 400, 0, 1);
-            ctx.fillStyle = p.color; ctx.fillText(p.text, clamp(p.x, 34, W - 34), p.y);
+            ctx.fillStyle = p.color; ctx.fillText(p.text, clamp(p.x, 80, W - 80), p.y);
           });
           ctx.globalAlpha = 1;
-          ctx.font = `bold 11px ${FONT}`; ctx.textAlign = 'left';
-          ctx.fillStyle = beams > 1 ? '#60a5fa' : C.muted;                                                    // current beam count
-          ctx.fillText(`BEAMS x${beams}`, 10, 12);
+          ctx.font = `bold 11px ${FONT}`; ctx.textAlign = 'left';                                            // weapon + shield readout
+          ctx.fillStyle = power > 1 ? '#60a5fa' : C.muted;
+          ctx.fillText(power >= MAX_POWER ? 'BEAMS x5 + ROCKETS · DMG x2' : `BEAMS x${power}`, 10, 12);
+          if (shieldT > 0){
+            ctx.fillStyle = '#22d3ee'; ctx.fillText(`SHIELD ${(shieldT / 1000).toFixed(1)}s`, 10, 27);
+            ctx.fillStyle = 'rgba(34,211,238,0.25)'; ctx.fillRect(10, 34, 70, 3);
+            ctx.fillStyle = '#22d3ee'; ctx.fillRect(10, 34, 70 * clamp(shieldT / SHIELD_MS, 0, 1), 3);
+          }
+          if (warnT > 0){                                                                                     // boss warning
+            const k = 0.5 + 0.5 * Math.sin(clock / 90);
+            ctx.fillStyle = `rgba(255,59,59,${(0.08 + 0.1 * k) * clamp(warnT / 500, 0, 1)})`; ctx.fillRect(0, 0, W, FIELD_H);
+            ctx.globalAlpha = clamp(warnT / 500, 0, 1) * (0.55 + 0.45 * k);
+            ctx.textAlign = 'center'; ctx.fillStyle = '#ff5d73';
+            ctx.font = `bold 38px ${FONT}`; ctx.fillText('WARNING', W / 2, FIELD_H / 2 + 20);
+            ctx.font = `bold 13px ${FONT}`; ctx.fillStyle = '#ffe4e6'; ctx.fillText('MOTHERSHIP APPROACHING', W / 2, FIELD_H / 2 + 50);
+            ctx.globalAlpha = 1;
+          }
           if (flashT > 0){                                 // quick red flash when a life is lost
             ctx.fillStyle = `rgba(255,59,59,${0.28 * clamp(flashT / FLASH_MS, 0, 1)})`;
             ctx.fillRect(0, 0, W, FIELD_H);
@@ -2992,6 +3400,7 @@
         });
         drawHud(`Score: ${score}`, `Level ${level} · Best: ${Math.max(best.shooter, score)}`, null);
         if (state === 'playing') drawBanner(bannerText, bannerT, bannerColor);
+        if (boss && state !== 'over') drawBossBar();
         ctx.fillStyle = C.blue;                          // remaining lives, drawn as little ships
         for (let i = 0; i < lives; i++){
           const lx = W - 20 - i * 20, ly = HUD / 2 - 6;
@@ -2999,8 +3408,8 @@
         }
         if (state === 'ready')
           drawOverlay('SPACE SHOOTER', C.blue, ['Slide with the left and right arrow keys.', "Your ship fires by itself. Don't let boxes past!",
-                                                'Every 100 points the boxes fall faster.', 'Blue orb = +1 beam   Green orb = +1 life',
-                                                'From 500 points: shooting ships + tough boxes!', 'Press an arrow key to start']);
+                                                'Blue orb = stronger weapon   Green = +1 life', 'Cyan orb = 6 seconds of shield',
+                                                'Tougher enemies and a boss wait as you score...', 'Press an arrow key to start']);
         else if (state === 'over')
           drawOverlay('GAME OVER', C.red, [`Score: ${score}   Best: ${best.shooter}`, 'Press an arrow key to play again']);
       }
